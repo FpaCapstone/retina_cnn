@@ -3,22 +3,27 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Database, Upload, CheckCircle, XCircle, ArrowLeft, Info } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Colors from '@/constants/colors';
 import { DISEASES } from '@/constants/diseases';
-import { DiseaseType, TrainingImage } from '@/types/disease';
+import { DiseaseType } from '@/types/disease';
+import { TrainingImageRecord } from '@/types/database';
 import { validateTrainingImage } from '@/utils/ml-analysis';
-
-const STORAGE_KEY = 'training_images';
+import { useOffline } from '@/contexts/offline-context';
 
 export default function TrainingScreen() {
   const router = useRouter();
+  const { saveTrainingImage, trainingImages, getTrainingImageCount } = useOffline();
   const [selectedDisease, setSelectedDisease] = useState<DiseaseType | null>(null);
-  const [uploadedImages, setUploadedImages] = useState<TrainingImage[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<TrainingImageRecord[]>([]);
   const [isValidating, setIsValidating] = useState(false);
   const [validationResult, setValidationResult] = useState<{ valid: boolean; reason: string } | null>(null);
+
+  // Load training images from offline context
+  useEffect(() => {
+    setUploadedImages(trainingImages);
+  }, [trainingImages]);
 
   const handleSelectDisease = (diseaseId: DiseaseType) => {
     setSelectedDisease(diseaseId);
@@ -47,21 +52,22 @@ export default function TrainingScreen() {
             setValidationResult(null);
 
             try {
-              const validation = await validateTrainingImage(imageUri, selectedDisease);
+              const validation = await validateTrainingImage(imageUri, selectedDisease!);
               setValidationResult(validation);
 
               if (validation.valid) {
-                const newImage: TrainingImage = {
+                const newImage: TrainingImageRecord = {
                   id: Date.now().toString(),
-                  uri: imageUri,
+                  imageUri: imageUri,
                   disease: selectedDisease,
                   uploadedAt: new Date().toISOString(),
+                  validated: true,
+                  validationReason: validation.reason,
+                  synced: false,
                 };
 
-                const updatedImages = [...uploadedImages, newImage];
-                setUploadedImages(updatedImages);
-                
-                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedImages));
+                // Save to offline context (will sync automatically if online)
+                saveTrainingImage(newImage);
                 
                 Alert.alert(
                   'Success!',
@@ -105,21 +111,22 @@ export default function TrainingScreen() {
       setValidationResult(null);
 
       try {
-        const validation = await validateTrainingImage(imageUri, selectedDisease);
+        const validation = await validateTrainingImage(imageUri, selectedDisease!);
         setValidationResult(validation);
 
         if (validation.valid) {
-          const newImage: TrainingImage = {
+          const newImage: TrainingImageRecord = {
             id: Date.now().toString(),
-            uri: imageUri,
+            imageUri: imageUri,
             disease: selectedDisease,
             uploadedAt: new Date().toISOString(),
+            validated: true,
+            validationReason: validation.reason,
+            synced: false,
           };
 
-          const updatedImages = [...uploadedImages, newImage];
-          setUploadedImages(updatedImages);
-          
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedImages));
+          // Save to offline context (will sync automatically if online)
+          saveTrainingImage(newImage);
           
           Alert.alert(
             'Success!',
@@ -147,7 +154,7 @@ export default function TrainingScreen() {
   };
 
   const getImageCountByDisease = (diseaseId: DiseaseType) => {
-    return uploadedImages.filter(img => img.disease === diseaseId).length;
+    return getTrainingImageCount(diseaseId);
   };
 
   return (
@@ -299,7 +306,7 @@ export default function TrainingScreen() {
                   const disease = DISEASES.find(d => d.id === img.disease);
                   return (
                     <View key={img.id} style={styles.imageItem}>
-                      <Image source={{ uri: img.uri }} style={styles.thumbnailImage} />
+                      <Image source={{ uri: img.imageUri }} style={styles.thumbnailImage} />
                       <View style={[styles.imageBadge, { backgroundColor: disease?.color }]}>
                         <Text style={styles.imageBadgeText}>
                           {disease?.name.substring(0, 3).toUpperCase()}

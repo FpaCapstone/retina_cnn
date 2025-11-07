@@ -1,7 +1,31 @@
 import { DiseaseType, AnalysisResult, DiseaseDetection } from '@/types/disease';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { trpcClient } from '@/lib/trpc';
+import { predictWithTFLite, checkTFLiteModelAvailable } from '@/utils/tflite-model';
+import { convertDiseaseTypeToBackend } from '@/utils/dataset-utils';
 
 const TRAINING_IMAGES_KEY = 'training_images';
+
+/**
+ * Check if backend is available
+ */
+async function checkBackendAvailable(): Promise<boolean> {
+  try {
+    // Try a simple health check or test call
+    // For now, we'll try to call the analyze endpoint with a timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+    
+    // Try to ping the backend (we'll use a simple test)
+    // In production, you might have a health check endpoint
+    return true; // Assume available for now, will be checked during actual call
+  } catch (error) {
+    console.log('[ML Analysis] Backend not available:', error);
+    return false;
+  }
+}
+
+const DISEASES: DiseaseType[] = ['normal', 'uveitis', 'conjunctivitis', 'cataract', 'eyelid_drooping'];
 
 const BASE_ACCURACY: Record<DiseaseType, number> = {
   normal: 0.90,
@@ -13,7 +37,8 @@ const BASE_ACCURACY: Record<DiseaseType, number> = {
 
 async function getTrainingImageCount(diseaseType: DiseaseType): Promise<number> {
   try {
-    const imagesData = await AsyncStorage.getItem(TRAINING_IMAGES_KEY);
+    // Use the same storage key as offline context for consistency
+    const imagesData = await AsyncStorage.getItem('offline_training_images');
     if (!imagesData) return 0;
     const images = JSON.parse(imagesData);
     return images.filter((img: any) => img.disease === diseaseType).length;
@@ -62,9 +87,7 @@ function generateIndependentPredictions(
 
   const featureScore = (features.brightness + features.contrast + features.complexity) / 3;
 
-  const diseases: DiseaseType[] = ['normal', 'uveitis', 'conjunctivitis', 'cataract', 'eyelid_drooping'];
-
-  const confidences: DiseaseDetection[] = diseases.map((disease, index) => {
+  const confidences: DiseaseDetection[] = DISEASES.map((disease, index) => {
     const baseAcc = BASE_ACCURACY[disease];
     const modelAcc = calculateAccuracy(baseAcc, trainingCounts[disease] || 0);
     const randomFactor = random(hash * (index + 1)) * 0.4 - 0.2;
@@ -83,8 +106,115 @@ function generateIndependentPredictions(
 }
 
 export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult> {
-  console.log('Starting offline per-disease ML analysis. Image URI:', imageUri);
+  console.log('[ML Analysis] Starting analysis. Image URI:', imageUri);
 
+  // Try backend first
+  try {
+    console.log('[ML Analysis] Attempting backend analysis...');
+    const backendResult = await Promise.race([
+      trpcClient.detection.analyze.mutate({ imageUri }),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Backend timeout')), 5000)
+      ),
+    ]) as any;
+
+    if (backendResult && backendResult.prediction) {
+      console.log('[ML Analysis] Backend analysis successful:', backendResult);
+      
+      // Convert backend result to frontend format
+      // Backend uses "Eyelid Drooping", frontend uses "eyelid_drooping"
+      let backendDisease = backendResult.prediction.toLowerCase();
+      if (backendDisease === 'eyelid drooping') {
+        backendDisease = 'eyelid_drooping';
+      } else {
+        backendDisease = backendDisease.replace(' ', '_');
+      }
+      const diseaseType = backendDisease as DiseaseType;
+      const confidence = backendResult.confidence || 0.85;
+      
+      const detections: DiseaseDetection[] = [
+        {
+          disease: diseaseType,
+          confidence,
+          percentage: confidence * 100,
+        },
+        // Add other diseases with lower confidence
+        ...DISEASES.filter(d => d !== diseaseType).map(d => ({
+          disease: d,
+          confidence: (1 - confidence) / (DISEASES.length - 1),
+          percentage: ((1 - confidence) / (DISEASES.length - 1)) * 100,
+        })),
+      ].slice(0, 3);
+
+      const diseaseDescriptions: Record<DiseaseType, { description: string }> = {
+        normal: {
+          description: 'No eye disease detected. Clear vision with healthy appearance and no redness or swelling. Continue routine eye care.',
+        },
+        uveitis: {
+          description: 'Signs consistent with uveitis detected: redness, pain, light sensitivity, and possible floaters. Inflammatory response likely affecting intraocular structures. Ophthalmic evaluation recommended.',
+        },
+        conjunctivitis: {
+          description: 'Findings consistent with conjunctivitis: conjunctival redness with tearing/itching and possible discharge or eyelid crusting. Consider hygiene and clinical consultation if symptoms persist.',
+        },
+        cataract: {
+          description: 'Lens opacity patterns suggest cataract changes leading to cloudy/blurred vision and glare sensitivity. Consider ophthalmology consult for staging and management.',
+        },
+        eyelid_drooping: {
+          description: 'External features indicate eyelid drooping with possible swelling/irritation and palpable eyelid lumps. Evaluate for ptosis or blepharitis/chalazion. Clinical assessment advised.',
+        },
+      };
+
+      return {
+        detections,
+        primaryDisease: diseaseType,
+        timestamp: new Date().toISOString(),
+        imageUri,
+        details: diseaseDescriptions[diseaseType]?.description || 'Analysis complete.',
+      };
+    }
+  } catch (backendError) {
+    console.log('[ML Analysis] Backend not available, trying TFLite fallback:', backendError);
+    
+    // Fallback to TFLite model
+    try {
+      const tfliteAvailable = await checkTFLiteModelAvailable();
+      if (tfliteAvailable) {
+        console.log('[ML Analysis] Using TFLite model from assets...');
+        const tfliteResult = await predictWithTFLite(imageUri);
+        
+        const diseaseDescriptions: Record<DiseaseType, { description: string }> = {
+          normal: {
+            description: 'No eye disease detected. Clear vision with healthy appearance and no redness or swelling. Continue routine eye care.',
+          },
+          uveitis: {
+            description: 'Signs consistent with uveitis detected: redness, pain, light sensitivity, and possible floaters. Inflammatory response likely affecting intraocular structures. Ophthalmic evaluation recommended.',
+          },
+          conjunctivitis: {
+            description: 'Findings consistent with conjunctivitis: conjunctival redness with tearing/itching and possible discharge or eyelid crusting. Consider hygiene and clinical consultation if symptoms persist.',
+          },
+          cataract: {
+            description: 'Lens opacity patterns suggest cataract changes leading to cloudy/blurred vision and glare sensitivity. Consider ophthalmology consult for staging and management.',
+          },
+          eyelid_drooping: {
+            description: 'External features indicate eyelid drooping with possible swelling/irritation and palpable eyelid lumps. Evaluate for ptosis or blepharitis/chalazion. Clinical assessment advised.',
+          },
+        };
+
+        return {
+          detections: tfliteResult.detections,
+          primaryDisease: tfliteResult.primaryDisease,
+          timestamp: new Date().toISOString(),
+          imageUri,
+          details: diseaseDescriptions[tfliteResult.primaryDisease]?.description || 'Analysis complete.',
+        };
+      }
+    } catch (tfliteError) {
+      console.log('[ML Analysis] TFLite not available, using offline fallback:', tfliteError);
+    }
+  }
+
+  // Final fallback: use offline mock analysis
+  console.log('[ML Analysis] Using offline fallback analysis...');
   try {
     const features = await analyzeImageFeatures(imageUri);
     console.log('Image features:', features);
@@ -160,8 +290,33 @@ export async function validateTrainingImage(
   expectedDisease: DiseaseType
 ): Promise<{ valid: boolean; reason: string }> {
   try {
-    console.log('Validating training image offline for:', expectedDisease);
+    console.log('[ML Analysis] Validating training image for:', expectedDisease);
     
+    // Try backend first
+    try {
+      const backendDisease = convertDiseaseTypeToBackend(expectedDisease);
+      const backendResult = await Promise.race([
+        trpcClient.training.validate.mutate({ 
+          imageUri, 
+          disease: backendDisease 
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Backend timeout')), 3000)
+        ),
+      ]) as any;
+
+      if (backendResult && typeof backendResult.valid === 'boolean') {
+        console.log('[ML Analysis] Backend validation successful:', backendResult);
+        return {
+          valid: backendResult.valid,
+          reason: backendResult.reason || 'Validation complete.',
+        };
+      }
+    } catch (backendError) {
+      console.log('[ML Analysis] Backend not available, using offline validation:', backendError);
+    }
+
+    // Fallback to offline validation
     await new Promise(resolve => setTimeout(resolve, 1200));
 
     const features = await analyzeImageFeatures(imageUri);

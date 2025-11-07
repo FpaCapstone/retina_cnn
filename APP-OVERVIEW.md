@@ -473,7 +473,7 @@ See [README.md](./README.md) for complete deployment instructions.
 
 ## License
 
-This project is built with [Rork](https://rork.com). See project settings for license details.
+This project is built with React Native and Expo. See project settings for license details.
 
 ---
 

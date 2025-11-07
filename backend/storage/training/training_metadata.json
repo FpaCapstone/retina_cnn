@@ -1,0 +1,59 @@
+[
+  {
+    "id": "1704067200000",
+    "disease": "Normal",
+    "imageFile": "training_1704067200000_1704067200000.jpg",
+    "uploadedAt": "2024-01-01T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Normal training."
+  },
+  {
+    "id": "1704153600000",
+    "disease": "Cataract",
+    "imageFile": "training_1704153600000_1704153600000.jpg",
+    "uploadedAt": "2024-01-02T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Cataract training."
+  },
+  {
+    "id": "1704240000000",
+    "disease": "Conjunctivitis",
+    "imageFile": "training_1704240000000_1704240000000.jpg",
+    "uploadedAt": "2024-01-03T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Conjunctivitis training."
+  },
+  {
+    "id": "1704326400000",
+    "disease": "Uveitis",
+    "imageFile": "training_1704326400000_1704326400000.jpg",
+    "uploadedAt": "2024-01-04T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Uveitis training."
+  },
+  {
+    "id": "1704412800000",
+    "disease": "Eyelid Drooping",
+    "imageFile": "training_1704412800000_1704412800000.jpg",
+    "uploadedAt": "2024-01-05T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Eyelid Drooping training."
+  },
+  {
+    "id": "1704499200000",
+    "disease": "Normal",
+    "imageFile": "training_1704499200000_1704499200000.jpg",
+    "uploadedAt": "2024-01-06T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Normal training."
+  },
+  {
+    "id": "1704585600000",
+    "disease": "Cataract",
+    "imageFile": "training_1704585600000_1704585600000.jpg",
+    "uploadedAt": "2024-01-07T00:00:00.000Z",
+    "validated": true,
+    "validationReason": "✅ Image quality acceptable for Cataract training."
+  }
+]
+

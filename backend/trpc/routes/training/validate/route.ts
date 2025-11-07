@@ -1,45 +1,93 @@
 import { publicProcedure } from "../../../create-context";
 import { z } from "zod";
+import fs from "fs";
+import path from "path";
 
-const diseaseTypeSchema = z.enum(['normal', 'diabetes', 'glaucoma', 'cataract', 'amd', 'hypertension', 'myopia', 'other']);
+const diseaseTypeSchema = z.enum([
+  "Normal",
+  "Uveitis",
+  "Conjunctivitis",
+  "Cataract",
+  "Eyelid Drooping",
+]);
 
 const validateImageSchema = z.object({
-  imageUri: z.string(),
+  imageUri: z.string(), // Can be a base64 or local path
   disease: diseaseTypeSchema,
 });
 
 export const validateImageProcedure = publicProcedure
   .input(validateImageSchema)
   .mutation(async ({ input }) => {
-    console.log('[Backend] Validating training image for:', input.disease);
-    
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log("[Backend] 🔍 Validating training image for:", input.disease);
 
-    const hash = input.imageUri.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const isValid = Math.sin(hash * 7) > -0.3;
+    // Artificial short delay to simulate computation time
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const validReasons: Record<string, string> = {
-      normal: 'Backend validated: Normal eye structures clearly visible. Image quality is sufficient for training the model.',
-      diabetes: 'Backend validated: Retinal blood vessels are clearly visible. Image quality meets training requirements for diabetic retinopathy detection.',
-      glaucoma: 'Backend validated: Clear view of optic disc detected. Image quality is sufficient for training the glaucoma detection model.',
-      cataract: 'Backend validated: Lens structure is clearly visible. Image quality is adequate for cataract detection training.',
-      amd: 'Backend validated: Macular region is clearly visible. Image quality meets requirements for AMD detection training.',
-      hypertension: 'Backend validated: Retinal vessels are clearly visible. Image quality is adequate for hypertensive retinopathy training.',
-      myopia: 'Backend validated: Retinal changes are clearly visible. Image quality meets myopia detection training requirements.',
-      other: 'Backend validated: Eye structures are clearly visible. Image quality is sufficient for general abnormality detection training.',
-    };
+    // Check image existence or decode base64
+    let valid = false;
+    let reason = "";
 
-    const invalidReasons = [
-      'Backend validation: Image quality is insufficient for training. Please ensure good lighting and focus.',
-      'Backend validation: Unable to clearly identify eye structures. Please capture a clearer image.',
-      'Backend validation: Image appears blurry or out of focus. Retake with better camera stability.',
-    ];
+    if (input.imageUri.startsWith("data:image")) {
+      // Basic base64 validation
+      const size = Buffer.byteLength(
+        input.imageUri.replace(/^data:image\/\w+;base64,/, ""),
+        "base64"
+      );
+      valid = size > 30000; // roughly >30KB
+      reason = valid
+        ? `✅ Image quality acceptable for ${input.disease} training.`
+        : "⚠️ Image file appears too small or low quality for reliable training.";
+    } else if (fs.existsSync(input.imageUri)) {
+      // Local file validation
+      const stats = fs.statSync(input.imageUri);
+      valid = stats.size > 50000; // 50KB threshold
+      reason = valid
+        ? `✅ File ${path.basename(
+            input.imageUri
+          )} passed validation for ${input.disease}.`
+        : `⚠️ ${path.basename(
+            input.imageUri
+          )} seems too small; retake with better quality.`;
+    } else {
+      reason =
+        "⚠️ Image path not found or invalid. Ensure the file is correctly uploaded.";
+    }
 
+    // ----------------------------------------
+    // 🗃️ Update metadata if file was validated
+    // ----------------------------------------
+    const trainingRoot = path.join(process.cwd(), "backend", "storage", "training");
+    const metadataPath = path.join(trainingRoot, "training_metadata.json");
+
+    if (fs.existsSync(metadataPath)) {
+      try {
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, "utf-8"));
+        const record = metadata.find(
+          (r: any) =>
+            r.imageFile && input.imageUri.includes(r.imageFile)
+        );
+        if (record) {
+          record.validated = valid;
+          record.validationReason = reason;
+          fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+          console.log(
+            `[Backend] 📘 Updated metadata for ${record.imageFile}: validated=${valid}`
+          );
+        }
+      } catch (err) {
+        console.warn("[Backend] ⚠️ Could not update training metadata:", err);
+      }
+    }
+
+    // ----------------------------------------
+    // ✅ Return structured validation result
+    // ----------------------------------------
     return {
-      valid: isValid,
-      reason: isValid 
-        ? validReasons[input.disease]
-        : invalidReasons[Math.abs(hash) % invalidReasons.length],
+      valid,
+      reason,
+      disease: input.disease,
+      checkedAt: new Date().toISOString(),
     };
   });
 

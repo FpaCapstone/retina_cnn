@@ -2,6 +2,22 @@ import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import { DiseaseType } from '@/types/disease';
 
+/**
+ * Convert frontend DiseaseType to backend format
+ * Frontend: 'normal' | 'uveitis' | 'conjunctivitis' | 'cataract' | 'eyelid_drooping'
+ * Backend: 'Normal' | 'Uveitis' | 'Conjunctivitis' | 'Cataract' | 'Eyelid Drooping'
+ */
+export function convertDiseaseTypeToBackend(disease: DiseaseType): 'Normal' | 'Uveitis' | 'Conjunctivitis' | 'Cataract' | 'Eyelid Drooping' {
+  const mapping: Record<DiseaseType, 'Normal' | 'Uveitis' | 'Conjunctivitis' | 'Cataract' | 'Eyelid Drooping'> = {
+    'normal': 'Normal',
+    'uveitis': 'Uveitis',
+    'conjunctivitis': 'Conjunctivitis',
+    'cataract': 'Cataract',
+    'eyelid_drooping': 'Eyelid Drooping',
+  };
+  return mapping[disease];
+}
+
 const getDatasetPath = () => {
   if (Platform.OS === 'web') {
     return 'datasets/';

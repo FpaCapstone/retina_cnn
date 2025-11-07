@@ -1,15 +1,6 @@
-# RETFound Requirements
-torch>=2.0.0
-torchvision>=0.15.0
-timm>=0.9.0
-pillow>=9.0.0
-numpy>=1.23.0
-
-# API Server
-flask>=2.3.0
-flask-cors>=4.0.0
-
-# Training & Utilities
-tqdm>=4.65.0
-matplotlib>=3.7.0
-scikit-learn>=1.2.0
+tensorflow
+numpy
+opencv-python
+scikit-learn
+imblearn
+matplotlib

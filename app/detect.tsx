@@ -8,11 +8,14 @@ import Colors from '@/constants/colors';
 import { DISEASES } from '@/constants/diseases';
 import { analyzeEyeImage } from '@/utils/ml-analysis';
 import { AnalysisResult, DiseaseDetection } from '@/types/disease';
+import { useOffline } from '@/contexts/offline-context';
 
 type DetectionStep = 'instructions' | 'capture' | 'analyzing' | 'results';
 
 export default function DetectScreen() {
   const router = useRouter();
+  const { saveDetection } = useOffline();
+
   const [step, setStep] = useState<DetectionStep>('instructions');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -43,9 +46,7 @@ export default function DetectScreen() {
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
-      if (useCamera) {
-        input.capture = 'environment' as any;
-      }
+      if (useCamera) input.capture = 'environment' as any;
       
       input.onchange = async (e: any) => {
         const file = e.target?.files?.[0];
@@ -60,14 +61,12 @@ export default function DetectScreen() {
           reader.readAsDataURL(file);
         }
       };
-      
       input.click();
       return;
     }
 
     if (useCamera) {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      
       if (!permissionResult.granted) {
         alert('Camera permission is required to take photos');
         return;
@@ -98,6 +97,20 @@ export default function DetectScreen() {
   const performAnalysis = async (uri: string) => {
     try {
       const analysisResult = await analyzeEyeImage(uri);
+
+      // ✅ Save detection locally for offline sync
+      const detectionRecord = {
+        id: Date.now().toString(),
+        imageUri: uri,
+        primaryDisease: analysisResult.primaryDisease,
+        detections: analysisResult.detections,
+        timestamp: new Date().toISOString(),
+        details: analysisResult.details,
+        uploadedAt: new Date().toISOString(),
+        synced: false,
+      };
+      saveDetection(detectionRecord);
+
       setResult(analysisResult);
       setStep('results');
     } catch (error) {
@@ -229,7 +242,6 @@ export default function DetectScreen() {
 
   const renderResults = () => {
     if (!result) return null;
-
     const primaryDisease = DISEASES.find(d => d.id === result.primaryDisease);
     const topDetections = result.detections.slice(0, 3);
 
@@ -242,9 +254,7 @@ export default function DetectScreen() {
         <Text style={styles.stepTitle}>Analysis Complete</Text>
         <Text style={styles.stepSubtitle}>Multi-disease detection results</Text>
 
-        {imageUri && (
-          <Image source={{ uri: imageUri }} style={styles.resultImage} />
-        )}
+        {imageUri && <Image source={{ uri: imageUri }} style={styles.resultImage} />}
 
         <View style={styles.resultCard}>
           <Text style={styles.resultCardTitle}>Primary Finding</Text>
@@ -254,7 +264,6 @@ export default function DetectScreen() {
               {result.detections[0].percentage.toFixed(1)}%
             </Text>
           </View>
-
           <Text style={styles.detailsText}>{result.details}</Text>
         </View>
 
@@ -262,7 +271,7 @@ export default function DetectScreen() {
           <Text style={styles.resultCardTitle}>Top 3 Detections</Text>
           <Text style={styles.resultCardSubtitle}>Highest independent confidence scores</Text>
           
-          {topDetections.map((detection: DiseaseDetection, index: number) => {
+          {topDetections.map((detection: DiseaseDetection) => {
             const disease = DISEASES.find(d => d.id === detection.disease);
             return (
               <View key={detection.disease} style={styles.detectionRow}>
@@ -270,17 +279,13 @@ export default function DetectScreen() {
                   <View style={[styles.diseaseIndicator, { backgroundColor: disease?.color }]} />
                   <Text style={styles.diseaseName}>{disease?.name}</Text>
                 </View>
-                
                 <View style={styles.detectionRight}>
                   <View style={styles.progressBarContainer}>
                     <View 
                       style={[
                         styles.progressBarFill,
-                        { 
-                          width: `${detection.percentage}%`,
-                          backgroundColor: disease?.color,
-                        }
-                      ]} 
+                        { width: `${detection.percentage}%`, backgroundColor: disease?.color },
+                      ]}
                     />
                   </View>
                   <Text style={styles.percentageText}>{detection.percentage.toFixed(1)}%</Text>
@@ -291,7 +296,7 @@ export default function DetectScreen() {
         </View>
 
         <View style={styles.modelBadge}>
-          <Text style={styles.modelBadgeText}>📱 On-Device AI Model</Text>
+          <Text style={styles.modelBadgeText}>📱 On-Device AI Model (Offline-Ready)</Text>
         </View>
 
         <TouchableOpacity
@@ -318,9 +323,7 @@ export default function DetectScreen() {
       <Stack.Screen 
         options={{
           title: 'Eye Disease Detection',
-          headerStyle: {
-            backgroundColor: Colors.primary.purple,
-          },
+          headerStyle: { backgroundColor: Colors.primary.purple },
           headerTintColor: Colors.text.primary,
           headerLeft: () => (
             <TouchableOpacity onPress={handleGoHome} style={{ marginLeft: 8 }}>
@@ -338,10 +341,7 @@ export default function DetectScreen() {
       />
       
       <View style={styles.safeArea}>
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {step === 'instructions' && renderInstructions()}
           {step === 'capture' && renderCapture()}
           {step === 'analyzing' && renderAnalyzing()}
@@ -360,252 +360,218 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    flexGrow: 1,
+    padding: 20,
   },
   contentContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
+    marginVertical: 20,
   },
   iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   stepTitle: {
-    fontSize: 32,
-    fontWeight: '800' as const,
+    fontSize: 24,
+    fontWeight: 'bold',
     color: Colors.text.primary,
     marginBottom: 8,
-    textAlign: 'center',
   },
   stepSubtitle: {
     fontSize: 16,
-    fontWeight: '500' as const,
-    color: Colors.text.primary,
-    opacity: 0.9,
+    color: Colors.text.secondary,
+    marginBottom: 24,
     textAlign: 'center',
-    marginBottom: 32,
+  },
+  primaryButton: {
+    width: '100%',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  primaryButtonText: {
+    color: Colors.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    padding: 16,
+    marginTop: 12,
+  },
+  secondaryButtonText: {
+    color: Colors.text.primary,
+    fontSize: 16,
   },
   instructionsList: {
     width: '100%',
-    marginBottom: 32,
+    marginVertical: 24,
   },
   instructionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   instructionNumber: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: Colors.primary.purple,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   instructionNumberText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
     color: Colors.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   instructionText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600' as const,
     color: Colors.text.primary,
+    fontSize: 16,
+    flex: 1,
   },
   captureOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     width: '100%',
-    gap: 16,
-    marginBottom: 24,
+    marginVertical: 24,
   },
   captureButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: '48%',
+    aspectRatio: 1,
     borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
     borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   captureButtonText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
     color: Colors.text.primary,
     marginTop: 12,
-  },
-  primaryButton: {
-    width: '100%',
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  primaryButtonText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: Colors.text.primary,
-  },
-  secondaryButton: {
-    width: '100%',
-    padding: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: Colors.text.primary,
+    fontSize: 14,
   },
   previewImage: {
     width: 200,
     height: 200,
     borderRadius: 16,
-    marginTop: 24,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginVertical: 24,
   },
   analyzingSteps: {
-    marginTop: 32,
-    alignItems: 'flex-start',
     width: '100%',
+    marginTop: 24,
   },
   analyzingStep: {
-    fontSize: 16,
-    fontWeight: '600' as const,
     color: Colors.text.primary,
-    marginBottom: 12,
-    opacity: 0.9,
+    fontSize: 14,
+    marginBottom: 8,
   },
   resultImage: {
-    width: 250,
-    height: 250,
-    borderRadius: 20,
-    marginBottom: 24,
-    borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    marginVertical: 24,
   },
   resultCard: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
   },
   resultCardTitle: {
-    fontSize: 20,
-    fontWeight: '800' as const,
     color: Colors.text.primary,
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   resultCardSubtitle: {
-    fontSize: 13,
-    fontWeight: '500' as const,
-    color: Colors.text.primary,
-    opacity: 0.8,
-    textAlign: 'center',
+    color: Colors.text.secondary,
+    fontSize: 14,
     marginBottom: 16,
   },
   primaryDiseaseCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 3,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    marginVertical: 12,
   },
   primaryDiseaseName: {
-    fontSize: 24,
-    fontWeight: '800' as const,
     color: Colors.text.primary,
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   primaryDiseasePercentage: {
-    fontSize: 36,
-    fontWeight: '900' as const,
     color: Colors.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   detailsText: {
+    color: Colors.text.secondary,
     fontSize: 14,
-    fontWeight: '500' as const,
-    color: Colors.text.primary,
-    opacity: 0.9,
-    lineHeight: 20,
-    textAlign: 'center',
+    marginTop: 12,
   },
   detectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   detectionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    marginRight: 12,
   },
   diseaseIndicator: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 10,
+    marginRight: 8,
   },
   diseaseName: {
-    fontSize: 14,
-    fontWeight: '600' as const,
     color: Colors.text.primary,
-    flex: 1,
+    fontSize: 14,
   },
   detectionRight: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   progressBarContainer: {
     flex: 1,
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginRight: 10,
+    borderRadius: 3,
+    marginRight: 8,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
   },
   percentageText: {
-    fontSize: 13,
-    fontWeight: '700' as const,
     color: Colors.text.primary,
-    minWidth: 48,
+    fontSize: 14,
+    width: 50,
     textAlign: 'right',
   },
   modelBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginTop: 24,
   },
   modelBadgeText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
     color: Colors.text.primary,
-    textAlign: 'center',
+    fontSize: 12,
   },
 });

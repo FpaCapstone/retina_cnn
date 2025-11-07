@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DetectionRecord, TrainingImageRecord } from '@/types/database';
 import { useMutation } from '@tanstack/react-query';
 import { trpcClient } from '@/lib/trpc';
+import { convertDiseaseTypeToBackend } from '@/utils/dataset-utils';
 
 const DETECTIONS_KEY = 'offline_detections';
 const TRAINING_IMAGES_KEY = 'offline_training_images';
@@ -29,7 +30,16 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
 
       for (const detection of unsyncedDetections) {
         try {
-          await trpcClient.detection.save.mutate(detection);
+          // Convert DiseaseType to backend format
+          const backendDetection = {
+            ...detection,
+            primaryDisease: convertDiseaseTypeToBackend(detection.primaryDisease),
+            detections: detection.detections.map(d => ({
+              ...d,
+              disease: convertDiseaseTypeToBackend(d.disease),
+            })),
+          };
+          await trpcClient.detection.save.mutate(backendDetection);
           detection.synced = true;
           console.log('[Offline] Synced detection:', detection.id);
         } catch (error) {
@@ -39,7 +49,12 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
 
       for (const training of unsyncedTraining) {
         try {
-          await trpcClient.training.save.mutate(training);
+          // Convert DiseaseType to backend format
+          const backendTraining = {
+            ...training,
+            disease: convertDiseaseTypeToBackend(training.disease),
+          };
+          await trpcClient.training.save.mutate(backendTraining);
           training.synced = true;
           console.log('[Offline] Synced training image:', training.id);
         } catch (error) {
@@ -126,7 +141,16 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
 
       if (isOnline) {
         try {
-          await trpcClient.detection.save.mutate(detection);
+          // Convert DiseaseType to backend format
+          const backendDetection = {
+            ...detection,
+            primaryDisease: convertDiseaseTypeToBackend(detection.primaryDisease),
+            detections: detection.detections.map(d => ({
+              ...d,
+              disease: convertDiseaseTypeToBackend(d.disease),
+            })),
+          };
+          await trpcClient.detection.save.mutate(backendDetection);
           detection.synced = true;
         } catch (error) {
           console.error('[Offline] Failed to sync detection immediately:', error);
@@ -146,7 +170,12 @@ export const [OfflineProvider, useOffline] = createContextHook(() => {
 
       if (isOnline) {
         try {
-          await trpcClient.training.save.mutate(trainingImage);
+          // Convert DiseaseType to backend format
+          const backendTraining = {
+            ...trainingImage,
+            disease: convertDiseaseTypeToBackend(trainingImage.disease),
+          };
+          await trpcClient.training.save.mutate(backendTraining);
           trainingImage.synced = true;
         } catch (error) {
           console.error('[Offline] Failed to sync training image immediately:', error);

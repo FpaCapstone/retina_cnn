@@ -1,0 +1,147 @@
+[
+  {
+    "id": "1704067200000",
+    "timestamp": 1704067200000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Normal",
+    "detections": [
+      {
+        "disease": "Normal",
+        "confidence": 0.95,
+        "percentage": 95.0
+      },
+      {
+        "disease": "Cataract",
+        "confidence": 0.03,
+        "percentage": 3.0
+      },
+      {
+        "disease": "Conjunctivitis",
+        "confidence": 0.02,
+        "percentage": 2.0
+      }
+    ],
+    "details": "No eye disease detected. Clear vision with healthy appearance and no redness or swelling."
+  },
+  {
+    "id": "1704153600000",
+    "timestamp": 1704153600000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Cataract",
+    "detections": [
+      {
+        "disease": "Cataract",
+        "confidence": 0.87,
+        "percentage": 87.0
+      },
+      {
+        "disease": "Normal",
+        "confidence": 0.08,
+        "percentage": 8.0
+      },
+      {
+        "disease": "Uveitis",
+        "confidence": 0.05,
+        "percentage": 5.0
+      }
+    ],
+    "details": "Cloudy or blurred vision, difficulty seeing at night, and sensitivity to glare due to lens opacity."
+  },
+  {
+    "id": "1704240000000",
+    "timestamp": 1704240000000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Conjunctivitis",
+    "detections": [
+      {
+        "disease": "Conjunctivitis",
+        "confidence": 0.92,
+        "percentage": 92.0
+      },
+      {
+        "disease": "Normal",
+        "confidence": 0.05,
+        "percentage": 5.0
+      },
+      {
+        "disease": "Uveitis",
+        "confidence": 0.03,
+        "percentage": 3.0
+      }
+    ],
+    "details": "Redness, itching, tearing, discharge, and crusting of the eyelids. Also known as pink eye."
+  },
+  {
+    "id": "1704326400000",
+    "timestamp": 1704326400000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Uveitis",
+    "detections": [
+      {
+        "disease": "Uveitis",
+        "confidence": 0.89,
+        "percentage": 89.0
+      },
+      {
+        "disease": "Conjunctivitis",
+        "confidence": 0.07,
+        "percentage": 7.0
+      },
+      {
+        "disease": "Normal",
+        "confidence": 0.04,
+        "percentage": 4.0
+      }
+    ],
+    "details": "Eye redness, pain, blurred vision, sensitivity to light, and floating spots. Inflammatory condition affecting the uveal tract."
+  },
+  {
+    "id": "1704412800000",
+    "timestamp": 1704412800000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Eyelid Drooping",
+    "detections": [
+      {
+        "disease": "Eyelid Drooping",
+        "confidence": 0.91,
+        "percentage": 91.0
+      },
+      {
+        "disease": "Normal",
+        "confidence": 0.06,
+        "percentage": 6.0
+      },
+      {
+        "disease": "Conjunctivitis",
+        "confidence": 0.03,
+        "percentage": 3.0
+      }
+    ],
+    "details": "Drooping eyelids, swelling, irritation, and lumps on more than one eyelid."
+  },
+  {
+    "id": "1704499200000",
+    "timestamp": 1704499200000,
+    "imageUri": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "primaryDisease": "Normal",
+    "detections": [
+      {
+        "disease": "Normal",
+        "confidence": 0.98,
+        "percentage": 98.0
+      },
+      {
+        "disease": "Cataract",
+        "confidence": 0.01,
+        "percentage": 1.0
+      },
+      {
+        "disease": "Conjunctivitis",
+        "confidence": 0.01,
+        "percentage": 1.0
+      }
+    ],
+    "details": "No eye disease detected. Clear vision with healthy appearance and no redness or swelling."
+  }
+]
+
