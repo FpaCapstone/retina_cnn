@@ -1,8 +1,10 @@
 {
   "expo": {
-    "name": "Retina Eye Disease Test",
-    "slug": "retina-eye-disease-test",
+    "name": "retina_cnn",
+    "slug": "retina_cnn",
+    "owner": "ImperviousKing",
     "version": "1.0.0",
+    
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "retinaeyediseasetest",
@@ -68,9 +70,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e3121d48-21b8-4aae-aa3f-e6c66d2bf2db"
+        "projectId": "2be631b1-fd63-4b11-bb61-fbbd0b5ad138"
       }
-    },
-    "owner": "kazuyasensei"
+    }
   }
 }
