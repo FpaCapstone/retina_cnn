@@ -4,7 +4,6 @@
     "slug": "retina_cnn",
     "owner": "kazuyasensei",
     "version": "1.0.0",
-    
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "retinaeyediseasetest",
@@ -47,10 +46,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET",
         "android.permission.RECORD_AUDIO"
-      ],
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "minSdkVersion": 23
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -62,7 +58,8 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
