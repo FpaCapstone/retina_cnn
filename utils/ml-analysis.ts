@@ -170,6 +170,8 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
         timestamp: new Date().toISOString(),
         imageUri,
         details: diseaseDescriptions[diseaseType]?.description || 'Analysis complete.',
+        usedModel: 'backend',
+        modelInfo: 'Backend AI Model (Online)',
       };
     }
   } catch (backendError) {
@@ -206,6 +208,8 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
           timestamp: new Date().toISOString(),
           imageUri,
           details: diseaseDescriptions[tfliteResult.primaryDisease]?.description || 'Analysis complete.',
+          usedModel: 'tflite',
+          modelInfo: 'On-Device AI Model (Offline)',
         };
       }
     } catch (tfliteError) {
@@ -260,6 +264,8 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
       timestamp: new Date().toISOString(),
       imageUri: imageUri,
       details: diseaseDescriptions[primaryDisease].description,
+      usedModel: 'offline',
+      modelInfo: 'Offline Rule-Based Analysis',
     };
 
     console.log('Independent per-disease analysis complete:', result);

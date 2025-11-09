@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: retina-backend
+    env: node
+    buildCommand: npm install && pip3 install -r python-scripts/requirements.txt || echo "Python dependencies installed"
+    startCommand: npx tsx server.ts
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+    healthCheckPath: /
+

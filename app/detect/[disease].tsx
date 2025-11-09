@@ -9,6 +9,7 @@ import Colors from '@/constants/colors';
 import { DISEASES } from '@/constants/diseases';
 import { DiseaseType } from '@/types/disease';
 import { analyzeEyeImageHybrid, HybridAnalysisResult } from '@/utils/ml-analysis-hybrid';
+import { analyzeEyeImageEnhanced, EnhancedAnalysisResult } from '@/utils/ml-analysis-enhanced';
 
 type DetectionStep = 'instructions' | 'capture' | 'analyzing' | 'results';
 
@@ -105,6 +106,40 @@ export default function DetectScreen() {
 
   const performAnalysis = async (uri: string) => {
     try {
+      // Try enhanced pipeline first (better accuracy for camera images)
+      try {
+        console.log('[Detection] Attempting enhanced pipeline...');
+        const enhancedResult = await analyzeEyeImageEnhanced(uri, {
+          enableQualityCheck: true,
+          enablePreprocessing: true,
+          enableNormalFilter: true,
+          enableDiseaseClassification: true,
+          enableValidation: true,
+        });
+        
+        // Convert enhanced result to hybrid format for display
+        const hybridResult: HybridAnalysisResult = {
+          disease: disease,
+          confidence: enhancedResult.detections[0]?.confidence || 0.5,
+          detected: enhancedResult.primaryDisease !== 'normal',
+          timestamp: enhancedResult.timestamp,
+          imageUri: enhancedResult.imageUri,
+          details: enhancedResult.details,
+          usedModel: 'Enhanced Pipeline',
+          modelInfo: enhancedResult.qualityScore 
+            ? `Quality Score: ${(enhancedResult.qualityScore * 100).toFixed(1)}% | ${enhancedResult.recommendation === 'retake' ? '⚠️ Retake recommended' : '✅ Quality acceptable'}`
+            : 'Enhanced 5-stage pipeline',
+          githubRepo: '',
+        };
+        
+        setResult(hybridResult);
+        setStep('results');
+        return;
+      } catch (enhancedError) {
+        console.log('[Detection] Enhanced pipeline not available, using hybrid fallback:', enhancedError);
+      }
+      
+      // Fallback to hybrid analysis
       const analysisResult = await analyzeEyeImageHybrid(uri, disease);
       setResult(analysisResult);
       setStep('results');
@@ -377,6 +412,10 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 24,
+    marginVertical: 20,
   },
   iconCircle: {
     width: 100,
@@ -391,15 +430,14 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 32,
     fontWeight: '800' as const,
-    color: Colors.text.primary,
+    color: '#000000',
     marginBottom: 8,
     textAlign: 'center',
   },
   stepSubtitle: {
     fontSize: 16,
     fontWeight: '500' as const,
-    color: Colors.text.primary,
-    opacity: 0.9,
+    color: '#333333',
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -410,7 +448,7 @@ const styles = StyleSheet.create({
   instructionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
@@ -419,7 +457,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: Colors.primary.purple,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
@@ -433,7 +471,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '600' as const,
-    color: Colors.text.primary,
+    color: '#000000',
   },
   captureOptions: {
     width: '100%',

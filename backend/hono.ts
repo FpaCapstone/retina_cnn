@@ -41,12 +41,18 @@ app.get("/", (c) => {
 // -------------------------------------
 app.get("/api/model/status", (c) => {
   const modelDir = path.join(process.cwd(), "backend", "models");
+  const assetsModelDir = path.join(process.cwd(), "assets", "images", "models");
+  
   const kerasModel = path.join(modelDir, "outer_eye_mobilenetv2.h5");
   const tfliteModel = path.join(modelDir, "outer_eye_mobilenetv2.tflite");
+  const assetsKerasModel = path.join(assetsModelDir, "outer_eye_mobilenetv2.h5");
+  const assetsTfliteModel = path.join(assetsModelDir, "outer_eye_mobilenetv2.tflite");
 
   const status = {
-    keras: fs.existsSync(kerasModel),
-    tflite: fs.existsSync(tfliteModel),
+    keras: fs.existsSync(kerasModel) || fs.existsSync(assetsKerasModel),
+    tflite: fs.existsSync(tfliteModel) || fs.existsSync(assetsTfliteModel),
+    kerasPath: fs.existsSync(kerasModel) ? kerasModel : (fs.existsSync(assetsKerasModel) ? assetsKerasModel : null),
+    tflitePath: fs.existsSync(tfliteModel) ? tfliteModel : (fs.existsSync(assetsTfliteModel) ? assetsTfliteModel : null),
   };
 
   return c.json({

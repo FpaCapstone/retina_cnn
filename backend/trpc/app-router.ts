@@ -5,6 +5,7 @@ import hiRoute from "./routes/example/hi/route";
 
 // 🔍 Detection routes
 import analyzeProcedure from "./routes/detection/analyze/route";
+import { analyzeEnhancedProcedure } from "./routes/detection/analyze-enhanced/route";
 import saveDetectionProcedure from "./routes/detection/save/route";
 import historyProcedure from "./routes/detection/history/route";
 
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
 
   detection: createTRPCRouter({
     analyze: analyzeProcedure,
+    analyzeEnhanced: analyzeEnhancedProcedure,
     save: saveDetectionProcedure,
     history: historyProcedure,
   }),

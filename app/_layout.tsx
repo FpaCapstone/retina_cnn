@@ -21,6 +21,13 @@ function RootLayoutNav() {
         name="index" 
         options={{ 
           headerShown: false,
+          title: 'Dashboard'
+        }} 
+      />
+      <Stack.Screen 
+        name="home" 
+        options={{ 
+          headerShown: false,
           title: 'Home'
         }} 
       />

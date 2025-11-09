@@ -4,3 +4,6 @@ opencv-python
 scikit-learn
 imblearn
 matplotlib
+seaborn
+tqdm
+pillow

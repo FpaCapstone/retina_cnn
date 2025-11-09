@@ -23,6 +23,8 @@ export interface AnalysisResult {
   timestamp: string;
   imageUri: string;
   details: string;
+  usedModel?: 'backend' | 'enhanced' | 'tflite' | 'offline';
+  modelInfo?: string;
 }
 
 export interface TrainingImage {

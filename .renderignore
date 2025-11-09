@@ -1,0 +1,39 @@
+# Files to ignore when deploying to Render
+
+node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+*.log
+.env
+.env.local
+.env.*.local
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Datasets (too large for deployment)
+python-scripts/datasets/
+python-scripts/evaluation_results/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+

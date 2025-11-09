@@ -248,7 +248,7 @@ export default function DetectScreen() {
     return (
       <Animated.View style={[styles.contentContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         <View style={[styles.iconCircle, { backgroundColor: primaryDisease?.color || Colors.primary.purple }]}>
-          <ScanEye size={48} color={Colors.text.primary} strokeWidth={2} />
+          <ScanEye size={48} color="#FFFFFF" strokeWidth={2} />
         </View>
         
         <Text style={styles.stepTitle}>Analysis Complete</Text>
@@ -296,7 +296,16 @@ export default function DetectScreen() {
         </View>
 
         <View style={styles.modelBadge}>
-          <Text style={styles.modelBadgeText}>📱 On-Device AI Model (Offline-Ready)</Text>
+          <Text style={styles.modelBadgeText}>
+            {result.usedModel === 'backend' || result.usedModel === 'enhanced' 
+              ? '🌐 Backend AI Model (Online)' 
+              : result.usedModel === 'tflite'
+              ? '📱 On-Device AI Model (Offline)'
+              : '⚙️ Offline Analysis'}
+          </Text>
+          {result.modelInfo && (
+            <Text style={styles.modelBadgeSubtext}>{result.modelInfo}</Text>
+          )}
         </View>
 
         <TouchableOpacity
@@ -381,12 +390,12 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.text.primary,
+    color: '#000000',
     marginBottom: 8,
   },
   stepSubtitle: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: '#333333',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -434,7 +443,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   instructionText: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 16,
     flex: 1,
   },
@@ -481,19 +490,21 @@ const styles = StyleSheet.create({
   },
   resultCard: {
     width: '100%',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   resultCardTitle: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   resultCardSubtitle: {
-    color: Colors.text.secondary,
+    color: '#333333',
     fontSize: 14,
     marginBottom: 16,
   },
@@ -505,19 +516,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     marginVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
   primaryDiseaseName: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
   },
   primaryDiseasePercentage: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
   },
   detailsText: {
-    color: Colors.text.secondary,
+    color: '#333333',
     fontSize: 14,
     marginTop: 12,
   },
@@ -538,7 +550,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   diseaseName: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 14,
   },
   detectionRight: {
@@ -558,20 +570,28 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   percentageText: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 14,
     width: 50,
     textAlign: 'right',
   },
   modelBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 16,
     marginTop: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.2)',
   },
   modelBadgeText: {
-    color: Colors.text.primary,
+    color: '#000000',
     fontSize: 12,
+    fontWeight: '600' as const,
+    marginBottom: 2,
+  },
+  modelBadgeSubtext: {
+    color: '#666666',
+    fontSize: 10,
   },
 });
