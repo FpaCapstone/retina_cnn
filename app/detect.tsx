@@ -243,7 +243,6 @@ export default function DetectScreen() {
   const renderResults = () => {
     if (!result) return null;
     const primaryDisease = DISEASES.find(d => d.id === result.primaryDisease);
-    const topDetections = result.detections.slice(0, 3);
 
     return (
       <Animated.View style={[styles.contentContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
@@ -268,10 +267,10 @@ export default function DetectScreen() {
         </View>
 
         <View style={styles.resultCard}>
-          <Text style={styles.resultCardTitle}>Top 3 Detections</Text>
-          <Text style={styles.resultCardSubtitle}>Highest independent confidence scores</Text>
+          <Text style={styles.resultCardTitle}>Detection Result</Text>
+          <Text style={styles.resultCardSubtitle}>AI confidence score</Text>
           
-          {topDetections.map((detection: DiseaseDetection) => {
+          {result.detections.slice(0, 1).map((detection: DiseaseDetection) => {
             const disease = DISEASES.find(d => d.id === detection.disease);
             return (
               <View key={detection.disease} style={styles.detectionRow}>

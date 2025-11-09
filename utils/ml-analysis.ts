@@ -132,19 +132,14 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
       const diseaseType = backendDisease as DiseaseType;
       const confidence = backendResult.confidence || 0.85;
       
+      // Only return the highest prediction
       const detections: DiseaseDetection[] = [
         {
           disease: diseaseType,
           confidence,
           percentage: confidence * 100,
         },
-        // Add other diseases with lower confidence
-        ...DISEASES.filter(d => d !== diseaseType).map(d => ({
-          disease: d,
-          confidence: (1 - confidence) / (DISEASES.length - 1),
-          percentage: ((1 - confidence) / (DISEASES.length - 1)) * 100,
-        })),
-      ].slice(0, 3);
+      ];
 
       const diseaseDescriptions: Record<DiseaseType, { description: string }> = {
         normal: {
@@ -202,8 +197,9 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
           },
         };
 
+        // Only use the highest prediction from TFLite
         return {
-          detections: tfliteResult.detections,
+          detections: [tfliteResult.detections[0]],
           primaryDisease: tfliteResult.primaryDisease,
           timestamp: new Date().toISOString(),
           imageUri,
@@ -236,7 +232,8 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
     const allDetections = generateIndependentPredictions(imageUri, features, trainingCounts);
     console.log('Per-disease predictions:', allDetections);
 
-    const detections = allDetections.slice(0, 3);
+    // Only return the highest prediction
+    const detections = [allDetections[0]];
 
     const primaryDisease = detections[0].disease;
 

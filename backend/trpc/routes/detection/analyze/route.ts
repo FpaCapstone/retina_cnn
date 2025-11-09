@@ -101,7 +101,30 @@ export const analyzeProcedure = publicProcedure
         } else {
           console.log("[Backend] ✅ Prediction complete");
           try {
-            const parsed = JSON.parse(resultData);
+            // Extract JSON from stdout (may contain TensorFlow progress output)
+            const lines = resultData.trim().split('\n');
+            let jsonStr = '';
+            
+            // Find the JSON object (should be the last line or contain {})
+            for (let i = lines.length - 1; i >= 0; i--) {
+              const line = lines[i].trim();
+              if (line.startsWith('{') && line.endsWith('}')) {
+                jsonStr = line;
+                break;
+              }
+            }
+            
+            // If no single-line JSON found, try to extract from multi-line
+            if (!jsonStr) {
+              const jsonMatch = resultData.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                jsonStr = jsonMatch[0];
+              } else {
+                jsonStr = resultData.trim();
+              }
+            }
+            
+            const parsed = JSON.parse(jsonStr);
 
             // -----------------------------
             // 💾 Save prediction result to history (optional, skip if fails)

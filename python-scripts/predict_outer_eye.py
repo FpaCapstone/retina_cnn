@@ -1,10 +1,16 @@
 import sys
 import json
 import numpy as np
+import os
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 
+# Suppress TensorFlow progress output
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.get_logger().setLevel('ERROR')
+
 if len(sys.argv) < 3:
+    print(json.dumps({"error": "Missing arguments"}), file=sys.stderr)
     print(json.dumps({"error": "Missing arguments"}))
     sys.exit(1)
 
@@ -20,7 +26,8 @@ try:
     img_array = image.img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0) / 255.0
 
-    predictions = model.predict(img_array)[0]
+    # Suppress verbose output during prediction
+    predictions = model.predict(img_array, verbose=0)[0]
     pred_index = np.argmax(predictions)
     confidence = float(predictions[pred_index])
     result = {
@@ -30,5 +37,6 @@ try:
     print(json.dumps(result))
 
 except Exception as e:
+    print(json.dumps({"error": str(e)}), file=sys.stderr)
     print(json.dumps({"error": str(e)}))
     sys.exit(1)

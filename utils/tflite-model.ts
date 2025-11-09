@@ -254,7 +254,7 @@ export async function predictWithTFLite(imageUri: string): Promise<{
 
     return {
       primaryDisease,
-      detections: detections.slice(0, 3), // Top 3
+      detections: [detections[0]], // Only highest prediction
     };
   } catch (error) {
     console.error('[TF.js] Prediction error:', error);
