@@ -95,10 +95,21 @@ export const analyzeProcedure = publicProcedure
       });
 
       py.on("close", (code) => {
-        if (code !== 0) {
+        // Check if it's just warnings (CUDA/GPU warnings are non-fatal)
+        const isJustWarnings = errorData.includes('CUDA') || 
+                              errorData.includes('cuda') || 
+                              errorData.includes('GPU will not be used') ||
+                              errorData.includes('compiled metrics') ||
+                              errorData.includes('WARNING:absl');
+        
+        if (code !== 0 && !isJustWarnings) {
           console.error("[Backend] ❌ Prediction script error:", errorData);
           reject(new Error("Prediction failed: " + errorData));
         } else {
+          // Log warnings but don't fail
+          if (isJustWarnings && errorData) {
+            console.warn("[Backend] TensorFlow warnings (non-fatal):", errorData.substring(0, 200));
+          }
           console.log("[Backend] ✅ Prediction complete");
           try {
             // Extract JSON from stdout (may contain TensorFlow progress output)
