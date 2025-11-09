@@ -5,12 +5,12 @@
     "owner": "kazuyasensei",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/retina_logo.png",
     "scheme": "retinaeyediseasetest",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/retina_logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -36,7 +36,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/retina_logo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.kazuyasensei.retinaeyediseasetest",
@@ -49,7 +49,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/images/retina_logo.png",
       "bundler": "metro"
     },
     "plugins": [

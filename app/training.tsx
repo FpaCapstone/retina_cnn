@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Database, Upload, CheckCircle, XCircle, ArrowLeft, Info } from 'lucide-react-native';
+import { Database, Upload, CheckCircle, XCircle, ArrowLeft, Info, Home } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 
 import { useState, useEffect } from 'react';
@@ -167,9 +167,15 @@ export default function TrainingScreen() {
           },
           headerTintColor: Colors.text.primary,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleGoBack} style={{ marginLeft: 8 }}>
-              <ArrowLeft size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12, marginLeft: 8 }}>
+              <TouchableOpacity onPress={() => router.push('/')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: 12 }}>
+                <Home size={18} color={Colors.text.primary} />
+                <Text style={{ color: Colors.text.primary, fontSize: 14, fontWeight: '600' }}>Dashboard</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleGoBack} style={{ paddingVertical: 6 }}>
+                <ArrowLeft size={24} color={Colors.text.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />

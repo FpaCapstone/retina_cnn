@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, Animated, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Camera, ArrowLeft, Info, ScanEye } from 'lucide-react-native';
+import { Camera, ArrowLeft, Info, ScanEye, Home } from 'lucide-react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import * as ImagePicker from 'expo-image-picker';
@@ -335,9 +335,15 @@ export default function DetectScreen() {
           headerStyle: { backgroundColor: Colors.primary.purple },
           headerTintColor: Colors.text.primary,
           headerLeft: () => (
-            <TouchableOpacity onPress={handleGoHome} style={{ marginLeft: 8 }}>
-              <ArrowLeft size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 12, marginLeft: 8 }}>
+              <TouchableOpacity onPress={() => router.push('/')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: 12 }}>
+                <Home size={18} color={Colors.text.primary} />
+                <Text style={{ color: Colors.text.primary, fontSize: 14, fontWeight: '600' }}>Dashboard</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleGoHome} style={{ paddingVertical: 6 }}>
+                <ArrowLeft size={24} color={Colors.text.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />

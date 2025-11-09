@@ -10,8 +10,8 @@
     "lint": "expo lint",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "backend": "tsx server.ts",
-    "backend:dev": "tsx watch server.ts"
+    "backend": "npx tsx server.ts",
+    "backend:dev": "npx tsx watch server.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.81",
@@ -69,11 +69,11 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@expo/ngrok": "^4.1.0",
-    "@types/react": "~19.1.10",
     "@hono/node-server": "^1.12.0",
-    "tsx": "^4.19.0",
+    "@types/react": "~19.1.10",
     "eslint": "9.31.0",
     "eslint-config-expo": "~10.0.0",
+    "tsx": "^4.20.6",
     "typescript": "~5.9.2"
   },
   "private": true

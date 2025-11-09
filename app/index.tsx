@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Activity, 
@@ -119,7 +120,11 @@ export default function DashboardScreen() {
         >
           <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.logoContainer}>
-              <Activity size={48} color={Colors.text.primary} strokeWidth={2.5} />
+              <Image 
+                source={require('@/assets/images/retina_logo.png')} 
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.title}>RETINA</Text>
             <Text style={styles.subtitle}>Real-Time Eye-Disease Testing</Text>
@@ -263,6 +268,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.3)',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   title: {
     fontSize: 52,
