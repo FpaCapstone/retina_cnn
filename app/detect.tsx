@@ -9,6 +9,7 @@ import { DISEASES } from '@/constants/diseases';
 import { analyzeEyeImage } from '@/utils/ml-analysis';
 import { AnalysisResult, DiseaseDetection } from '@/types/disease';
 import { useOffline } from '@/contexts/offline-context';
+import SyncIndicator from '@/components/SyncIndicator';
 
 type DetectionStep = 'instructions' | 'capture' | 'analyzing' | 'results';
 
@@ -346,6 +347,7 @@ export default function DetectScreen() {
           ),
         }}
       />
+      <SyncIndicator />
       
       <LinearGradient
         colors={[Colors.primary.purple, Colors.primary.teal, Colors.primary.green]}

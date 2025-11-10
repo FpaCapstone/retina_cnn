@@ -181,6 +181,82 @@ Library/Caches/BraveSoftware/Brave-Browser/Default/Cache/Cache_Data/
 /Users/gsadmin/Library/Preferences/
 
 # ===================================
+#  Backend Files (NOT needed in mobile app)
+# ===================================
+# Backend is now hosted on Render (https://retina-cnn.onrender.com)
+# Keep type definitions (needed for TypeScript), but exclude runtime code
+
+# Exclude large model files (141MB total)
+backend/models/*.h5
+backend/models/*.pb
+assets/images/models/*.h5
+
+# Exclude backend server implementation files
+# Note: TypeScript files are kept for type checking but won't be bundled
+# if not imported by app code (they use server-side APIs like 'fs', 'path')
+backend/storage/
+backend/hono.ts
+backend/create-context.ts
+server.ts
+render.yaml
+
+# Keep backend/trpc/ directory for TypeScript type definitions
+# The route files won't be bundled in mobile app (they use server-side APIs)
+# But TypeScript needs them to generate AppRouter type
+
+# ===================================
+#  Python Scripts (NOT needed in mobile app)
+# ===================================
+python-scripts/
+*.py
+requirements.txt
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.env
+.venv
+env/
+ENV/
+
+# ===================================
+#  Evaluation Results (NOT needed in mobile app)
+# ===================================
+evaluation_results/
+*.png
+*.jpg
+*.jpeg
+# But keep essential app images
+!assets/images/*.png
+!assets/images/*.jpg
+!assets/images/retina_logo.png
+!assets/images/icon.png
+!assets/images/adaptive-icon.png
+!assets/images/favicon.png
+!assets/images/splash-icon.png
+
+# ===================================
+#  Model Files Strategy
+# ===================================
+# - Exclude H5 files (backend-only, 141MB total)
+# - Keep TFLite model (small, ~10MB) for offline fallback
+# - Backend models stay on Render server
+
+# ===================================
+#  Documentation (NOT needed in mobile app)
+# ===================================
+*.md
+!README.md
+DOCUMENTATION-*.md
+RENDER-*.md
+BACKEND-*.md
+CODE-*.md
+
+# ===================================
 #  Keep only essential project files
 # ===================================
 # (These are the files EAS *needs*)
@@ -194,7 +270,13 @@ Library/Caches/BraveSoftware/Brave-Browser/Default/Cache/Cache_Data/
 !index.js
 !index.ts
 !index.tsx
+!app/
 !assets/
-!src/
-!Public/
+!components/
+!contexts/
+!constants/
+!lib/
+!types/
+!utils/
+!hooks/
 

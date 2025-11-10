@@ -11,6 +11,7 @@ import { DiseaseType } from '@/types/disease';
 import { TrainingImageRecord } from '@/types/database';
 import { validateTrainingImage } from '@/utils/ml-analysis';
 import { useOffline } from '@/contexts/offline-context';
+import SyncIndicator from '@/components/SyncIndicator';
 
 export default function TrainingScreen() {
   const router = useRouter();
@@ -179,6 +180,7 @@ export default function TrainingScreen() {
           ),
         }}
       />
+      <SyncIndicator />
       
       <LinearGradient
         colors={[Colors.primary.purple, Colors.primary.teal, Colors.primary.green]}

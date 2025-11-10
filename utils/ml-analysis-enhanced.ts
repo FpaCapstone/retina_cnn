@@ -233,6 +233,8 @@ export async function analyzeEyeImageEnhanced(
           timestamp: new Date().toISOString(),
           imageUri,
           details: diseaseDescriptions[diseaseType]?.description || 'Analysis complete.',
+          usedModel: 'backend',
+          modelInfo: 'Backend AI Model (Online)',
           recommendation: 'accept', // Default when using standard analysis
         };
       }
@@ -272,6 +274,8 @@ export async function analyzeEyeImageEnhanced(
         timestamp: new Date().toISOString(),
         imageUri,
         details: diseaseDescriptions[tfliteResult.primaryDisease]?.description || 'Analysis complete.',
+        usedModel: 'tflite',
+        modelInfo: 'On-Device AI Model (Offline)',
         recommendation: 'accept',
       };
     }

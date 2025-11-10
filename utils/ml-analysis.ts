@@ -3,24 +3,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trpcClient } from '@/lib/trpc';
 import { predictWithTFLite, checkTFLiteModelAvailable } from '@/utils/tflite-model';
 import { convertDiseaseTypeToBackend } from '@/utils/dataset-utils';
+import { analyzeEyeImageEnhanced } from './ml-analysis-enhanced';
 
 const TRAINING_IMAGES_KEY = 'training_images';
 
 /**
- * Check if backend is available
+ * Check if backend is available by testing the connection
  */
 async function checkBackendAvailable(): Promise<boolean> {
   try {
-    // Try a simple health check or test call
-    // For now, we'll try to call the analyze endpoint with a timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+    // Try to fetch the backend health endpoint or make a simple test call
+    const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
     
-    // Try to ping the backend (we'll use a simple test)
-    // In production, you might have a health check endpoint
-    return true; // Assume available for now, will be checked during actual call
+    // For Render backend, try the root endpoint
+    if (baseUrl.includes('onrender.com') || baseUrl.includes('render.com')) {
+      try {
+        const response = await fetch(`${baseUrl}/`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(3000), // 3 second timeout
+        });
+        return response.ok;
+      } catch (error) {
+        console.log('[ML Analysis] Backend health check failed:', error);
+        return false;
+      }
+    }
+    
+    // For local development, assume available if not explicitly set
+    // The actual API call will fail gracefully if backend is down
+    return true;
   } catch (error) {
-    console.log('[ML Analysis] Backend not available:', error);
+    console.log('[ML Analysis] Backend availability check error:', error);
     return false;
   }
 }
@@ -108,21 +121,39 @@ function generateIndependentPredictions(
 export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult> {
   console.log('[ML Analysis] Starting analysis. Image URI:', imageUri);
 
-  // Try backend first
+  // PRIORITY 1: Try enhanced backend pipeline first (best accuracy)
   try {
-    console.log('[ML Analysis] Attempting backend analysis...');
+    console.log('[ML Analysis] 🚀 Attempting enhanced backend pipeline (5-stage)...');
+    const enhancedResult = await analyzeEyeImageEnhanced(imageUri, {
+      enableQualityCheck: true,
+      enablePreprocessing: true,
+      enableNormalFilter: true,
+      enableDiseaseClassification: true,
+      enableValidation: true,
+    });
+    
+    if (enhancedResult && enhancedResult.primaryDisease) {
+      console.log('[ML Analysis] ✅ Enhanced backend pipeline successful');
+      return enhancedResult;
+    }
+  } catch (enhancedError) {
+    console.log('[ML Analysis] ⚠️ Enhanced pipeline not available, trying standard backend:', enhancedError);
+  }
+
+  // PRIORITY 2: Try standard backend analysis
+  try {
+    console.log('[ML Analysis] 🔄 Attempting standard backend analysis...');
     const backendResult = await Promise.race([
       trpcClient.detection.analyze.mutate({ imageUri }),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Backend timeout')), 5000)
+        setTimeout(() => reject(new Error('Backend timeout')), 8000)
       ),
     ]) as any;
 
     if (backendResult && backendResult.prediction) {
-      console.log('[ML Analysis] Backend analysis successful:', backendResult);
+      console.log('[ML Analysis] ✅ Standard backend analysis successful:', backendResult);
       
       // Convert backend result to frontend format
-      // Backend uses "Eyelid Drooping", frontend uses "eyelid_drooping"
       let backendDisease = backendResult.prediction.toLowerCase();
       if (backendDisease === 'eyelid drooping') {
         backendDisease = 'eyelid_drooping';
@@ -170,47 +201,47 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
       };
     }
   } catch (backendError) {
-    console.log('[ML Analysis] Backend not available, trying TFLite fallback:', backendError);
-    
-    // Fallback to TFLite model
-    try {
-      const tfliteAvailable = await checkTFLiteModelAvailable();
-      if (tfliteAvailable) {
-        console.log('[ML Analysis] Using TFLite model from assets...');
-        const tfliteResult = await predictWithTFLite(imageUri);
-        
-        const diseaseDescriptions: Record<DiseaseType, { description: string }> = {
-          normal: {
-            description: 'No eye disease detected. Clear vision with healthy appearance and no redness or swelling. Continue routine eye care.',
-          },
-          uveitis: {
-            description: 'Signs consistent with uveitis detected: redness, pain, light sensitivity, and possible floaters. Inflammatory response likely affecting intraocular structures. Ophthalmic evaluation recommended.',
-          },
-          conjunctivitis: {
-            description: 'Findings consistent with conjunctivitis: conjunctival redness with tearing/itching and possible discharge or eyelid crusting. Consider hygiene and clinical consultation if symptoms persist.',
-          },
-          cataract: {
-            description: 'Lens opacity patterns suggest cataract changes leading to cloudy/blurred vision and glare sensitivity. Consider ophthalmology consult for staging and management.',
-          },
-          eyelid_drooping: {
-            description: 'External features indicate eyelid drooping with possible swelling/irritation and palpable eyelid lumps. Evaluate for ptosis or blepharitis/chalazion. Clinical assessment advised.',
-          },
-        };
+    console.log('[ML Analysis] ❌ Backend not available, trying TFLite fallback:', backendError);
+  }
 
-        // Only use the highest prediction from TFLite
-        return {
-          detections: [tfliteResult.detections[0]],
-          primaryDisease: tfliteResult.primaryDisease,
-          timestamp: new Date().toISOString(),
-          imageUri,
-          details: diseaseDescriptions[tfliteResult.primaryDisease]?.description || 'Analysis complete.',
-          usedModel: 'tflite',
-          modelInfo: 'On-Device AI Model (Offline)',
-        };
-      }
-    } catch (tfliteError) {
-      console.log('[ML Analysis] TFLite not available, using offline fallback:', tfliteError);
+  // PRIORITY 3: Fallback to TFLite model (offline)
+  try {
+    const tfliteAvailable = await checkTFLiteModelAvailable();
+    if (tfliteAvailable) {
+      console.log('[ML Analysis] 📱 Using TFLite model from assets (offline fallback)...');
+      const tfliteResult = await predictWithTFLite(imageUri);
+      
+      const diseaseDescriptions: Record<DiseaseType, { description: string }> = {
+        normal: {
+          description: 'No eye disease detected. Clear vision with healthy appearance and no redness or swelling. Continue routine eye care.',
+        },
+        uveitis: {
+          description: 'Signs consistent with uveitis detected: redness, pain, light sensitivity, and possible floaters. Inflammatory response likely affecting intraocular structures. Ophthalmic evaluation recommended.',
+        },
+        conjunctivitis: {
+          description: 'Findings consistent with conjunctivitis: conjunctival redness with tearing/itching and possible discharge or eyelid crusting. Consider hygiene and clinical consultation if symptoms persist.',
+        },
+        cataract: {
+          description: 'Lens opacity patterns suggest cataract changes leading to cloudy/blurred vision and glare sensitivity. Consider ophthalmology consult for staging and management.',
+        },
+        eyelid_drooping: {
+          description: 'External features indicate eyelid drooping with possible swelling/irritation and palpable eyelid lumps. Evaluate for ptosis or blepharitis/chalazion. Clinical assessment advised.',
+        },
+      };
+
+      // Only use the highest prediction from TFLite
+      return {
+        detections: [tfliteResult.detections[0]],
+        primaryDisease: tfliteResult.primaryDisease,
+        timestamp: new Date().toISOString(),
+        imageUri,
+        details: diseaseDescriptions[tfliteResult.primaryDisease]?.description || 'Analysis complete.',
+        usedModel: 'tflite',
+        modelInfo: 'On-Device AI Model (Offline)',
+      };
     }
+  } catch (tfliteError) {
+    console.log('[ML Analysis] ❌ TFLite not available, using offline fallback:', tfliteError);
   }
 
   // Final fallback: use offline mock analysis

@@ -20,17 +20,13 @@
         "buildType": "apk"
       },
       "ios": {
-        "simulator": false,
-        "buildType": "archive"
+        "simulator": false
       }
     },
     "production": {
       "distribution": "store",
       "android": {
         "buildType": "app-bundle"
-      },
-      "ios": {
-        "buildType": "release"
       }
     }
   },

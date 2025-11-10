@@ -141,30 +141,30 @@ export const analyzeProcedure = publicProcedure
             // 💾 Save prediction result to history (optional, skip if fails)
             // -----------------------------
             try {
-              const historyPath = path.join(
-                process.cwd(),
-                "backend",
-                "storage",
-                "history.json"
-              );
+            const historyPath = path.join(
+              process.cwd(),
+              "backend",
+              "storage",
+              "history.json"
+            );
               const historyDir = path.dirname(historyPath);
               if (!fs.existsSync(historyDir)) {
                 fs.mkdirSync(historyDir, { recursive: true });
               }
 
-              let history = [];
-              if (fs.existsSync(historyPath)) {
-                history = JSON.parse(fs.readFileSync(historyPath, "utf-8"));
-              }
+            let history = [];
+            if (fs.existsSync(historyPath)) {
+              history = JSON.parse(fs.readFileSync(historyPath, "utf-8"));
+            }
 
-              history.push({
-                timestamp: Date.now(),
-                image: path.basename(imagePath),
-                prediction: parsed.prediction,
-                confidence: parsed.confidence,
-              });
+            history.push({
+              timestamp: Date.now(),
+              image: path.basename(imagePath),
+              prediction: parsed.prediction,
+              confidence: parsed.confidence,
+            });
 
-              fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+            fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
             } catch (historyError) {
               console.warn("[Backend] Could not save history (non-critical):", historyError);
               // Continue anyway - history saving is optional
