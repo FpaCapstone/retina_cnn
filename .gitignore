@@ -78,3 +78,16 @@ logs/
 *.mp4
 
 .Trash/
+
+# ==========================
+# Large Model Files (Backend-only, not needed in repo)
+# ==========================
+# Models are stored on Render backend, not in Git
+# These files exceed GitHub's 100MB limit
+*.h5
+*.tflite
+backend/models/
+assets/images/models/
+# But keep small TFLite for mobile (if needed, use Git LFS)
+# Uncomment below if you need to track TFLite files with Git LFS
+# !assets/images/models/*.tflite
