@@ -88,12 +88,19 @@ logs/
 # Models are deployed to Render separately (not via Git)
 # See MODEL-FILES-STRATEGY.md for deployment instructions
 
-# Exclude all H5 model files
+# Exclude all H5 model files (too large for GitHub, >100MB)
 *.h5
 
-# Exclude TFLite files (optional - can be kept if <100MB, but excluded for consistency)
-*.tflite
+# Exclude TFLite files from backend (server-only, deployed separately)
+backend/models/*.tflite
 
-# Exclude model directories
+# Exclude backend model directory (H5 files only, deployed to Render separately)
 backend/models/
-assets/images/models/
+
+# Allow TFLite files in assets (small, mobile-friendly, under 100MB GitHub limit)
+# These are included in the mobile app build:
+# - assets/images/models/normal_abnormal_classifier.tflite (11MB) ✅
+# - assets/images/models/outer_eye_mobilenetv2.tflite (10MB) ✅
+
+# Exclude H5 files from assets (use TFLite instead - H5 removed to save space)
+assets/images/models/*.h5

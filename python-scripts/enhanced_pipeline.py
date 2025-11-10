@@ -439,63 +439,115 @@ def build_normal_vs_abnormal_classifier():
     return model
 
 def load_normal_vs_abnormal_classifier():
-    """Load or create normal/abnormal classifier."""
+    """
+    Load or create normal/abnormal classifier.
+    Priority: H5 backend > TFLite backend > TFLite assets (mobile) > Main model fallback
+    Note: H5 from assets is no longer used (removed to save space, TFLite is preferred for mobile)
+    """
     normal_model_path = os.path.join(MODEL_DIR, "normal_abnormal_classifier.h5")
-    normal_assets_path = os.path.join(ASSETS_MODEL_DIR, "normal_abnormal_classifier.h5")
+    normal_tflite_path = os.path.join(MODEL_DIR, "normal_abnormal_classifier.tflite")
+    normal_tflite_assets_path = os.path.join(ASSETS_MODEL_DIR, "normal_abnormal_classifier.tflite")
     
+    # Try H5 from backend first (server use)
     if os.path.exists(normal_model_path):
         try:
             import sys
-            print("🔬 Loading 6-layer CNN normal/abnormal classifier...", file=sys.stderr)
-            return load_model(normal_model_path)
+            print("🔬 Loading 6-layer CNN normal/abnormal classifier (H5 backend)...", file=sys.stderr)
+            return load_model(normal_model_path), 'h5'
         except Exception as e:
             import sys
-            print(f"⚠️  Could not load normal/abnormal classifier: {e}", file=sys.stderr)
-            return None
-    elif os.path.exists(normal_assets_path):
+            print(f"⚠️  Could not load normal/abnormal classifier H5: {e}", file=sys.stderr)
+    
+    # Try TFLite from backend (server fallback)
+    if os.path.exists(normal_tflite_path):
         try:
             import sys
-            print("🔬 Loading 6-layer CNN normal/abnormal classifier from assets...", file=sys.stderr)
-            return load_model(normal_assets_path)
+            print("🔬 Loading 6-layer CNN normal/abnormal classifier (TFLite backend)...", file=sys.stderr)
+            interpreter = tf.lite.Interpreter(model_path=normal_tflite_path)
+            interpreter.allocate_tensors()
+            return interpreter, 'tflite'
         except Exception as e:
             import sys
-            print(f"⚠️  Could not load normal/abnormal classifier: {e}", file=sys.stderr)
-            return None
+            print(f"⚠️  Could not load normal/abnormal classifier TFLite backend: {e}", file=sys.stderr)
+    
+    # Try TFLite from assets (mobile app - preferred for mobile)
+    if os.path.exists(normal_tflite_assets_path):
+        try:
+            import sys
+            print("🔬 Loading 6-layer CNN normal/abnormal classifier (TFLite assets - mobile)...", file=sys.stderr)
+            interpreter = tf.lite.Interpreter(model_path=normal_tflite_assets_path)
+            interpreter.allocate_tensors()
+            return interpreter, 'tflite'
+        except Exception as e:
+            import sys
+            print(f"⚠️  Could not load normal/abnormal classifier TFLite from assets: {e}", file=sys.stderr)
     
     # If no trained model exists, fall back to using main model's Normal probability
-    return None
+    return None, None
 
 def create_normal_vs_abnormal_classifier(model):
     """
     Create a binary normal/abnormal classifier.
-    First tries to use dedicated 6-layer CNN, falls back to main model's Normal probability.
+    First tries to use dedicated 6-layer CNN (H5 or TFLite), falls back to main model's Normal probability.
     """
-    # Try to load dedicated 6-layer CNN
-    normal_classifier_model = load_normal_vs_abnormal_classifier()
+    # Try to load dedicated 6-layer CNN (H5 or TFLite)
+    normal_classifier_model, model_type = load_normal_vs_abnormal_classifier()
     
     if normal_classifier_model is not None:
-        # Use dedicated 6-layer CNN
-        def classify_normal_abnormal_cnn(image_array: np.ndarray) -> dict:
-            img_resized = cv2.resize(image_array, IMG_SIZE)
-            img_normalized = img_resized.astype(np.float32) / 255.0
-            img_batched = np.expand_dims(img_normalized, axis=0)
+        if model_type == 'h5':
+            # Use dedicated 6-layer CNN (H5)
+            def classify_normal_abnormal_cnn(image_array: np.ndarray) -> dict:
+                img_resized = cv2.resize(image_array, IMG_SIZE)
+                img_normalized = img_resized.astype(np.float32) / 255.0
+                img_batched = np.expand_dims(img_normalized, axis=0)
+                
+                # Get binary prediction (0=abnormal, 1=normal)
+                prediction = normal_classifier_model.predict(img_batched, verbose=0)[0][0]
+                normal_prob = float(prediction)
+                abnormal_prob = 1.0 - normal_prob
+                
+                is_normal = normal_prob >= 0.85  # Threshold ≥0.85 as per documentation
+                
+                return {
+                    'is_normal': is_normal,
+                    'normal_probability': normal_prob,
+                    'abnormal_probability': abnormal_prob,
+                    'confidence': max(normal_prob, abnormal_prob),
+                    'method': '6_layer_cnn_h5'
+                }
             
-            # Get binary prediction (0=abnormal, 1=normal)
-            prediction = normal_classifier_model.predict(img_batched, verbose=0)[0][0]
-            normal_prob = float(prediction)
-            abnormal_prob = 1.0 - normal_prob
-            
-            is_normal = normal_prob >= 0.85  # Threshold ≥0.85 as per documentation
-            
-            return {
-                'is_normal': is_normal,
-                'normal_probability': normal_prob,
-                'abnormal_probability': abnormal_prob,
-                'confidence': max(normal_prob, abnormal_prob),
-                'method': '6_layer_cnn'
-            }
+            return classify_normal_abnormal_cnn
         
-        return classify_normal_abnormal_cnn
+        elif model_type == 'tflite':
+            # Use dedicated 6-layer CNN (TFLite)
+            interpreter = normal_classifier_model
+            input_details = interpreter.get_input_details()
+            output_details = interpreter.get_output_details()
+            
+            def classify_normal_abnormal_tflite(image_array: np.ndarray) -> dict:
+                img_resized = cv2.resize(image_array, IMG_SIZE)
+                img_normalized = img_resized.astype(np.float32) / 255.0
+                img_batched = np.expand_dims(img_normalized, axis=0).astype(input_details[0]['dtype'])
+                
+                # Run inference
+                interpreter.set_tensor(input_details[0]['index'], img_batched)
+                interpreter.invoke()
+                prediction = interpreter.get_tensor(output_details[0]['index'])[0][0]
+                
+                normal_prob = float(prediction)
+                abnormal_prob = 1.0 - normal_prob
+                
+                is_normal = normal_prob >= 0.85  # Threshold ≥0.85 as per documentation
+                
+                return {
+                    'is_normal': is_normal,
+                    'normal_probability': normal_prob,
+                    'abnormal_probability': abnormal_prob,
+                    'confidence': max(normal_prob, abnormal_prob),
+                    'method': '6_layer_cnn_tflite'
+                }
+            
+            return classify_normal_abnormal_tflite
     
     # Fallback: Use main model's Normal class probability
     def classify_normal_abnormal_fallback(image_array: np.ndarray) -> dict:
@@ -528,18 +580,43 @@ def filter_normal_eyes(image_array: np.ndarray, model, normal_classifier):
     """
     Stage 3: Quick normal/abnormal filter.
     
+    If normal is detected (≥0.85 confidence), directly assess confidence level for normal eyes
+    and skip disease classification.
+    
     Returns:
-        Dictionary with normal/abnormal classification
+        Dictionary with normal/abnormal classification and confidence assessment
     """
     result = normal_classifier(image_array)
     
     if result['is_normal']:
+        # Normal eye detected - directly assess confidence level
+        normal_confidence = result['normal_probability']
+        
+        # Confidence assessment levels
+        if normal_confidence >= 0.95:
+            confidence_level = 'very_high'
+            confidence_label = 'Very High Confidence'
+        elif normal_confidence >= 0.90:
+            confidence_level = 'high'
+            confidence_label = 'High Confidence'
+        elif normal_confidence >= 0.85:
+            confidence_level = 'moderate'
+            confidence_label = 'Moderate Confidence'
+        else:
+            confidence_level = 'low'
+            confidence_label = 'Low Confidence'
+        
         return {
             'stage': 'normal_filter',
             'result': 'normal',
-            'confidence': result['normal_probability'],
+            'confidence': normal_confidence,
+            'confidence_level': confidence_level,
+            'confidence_label': confidence_label,
             'skip_disease_classification': True,  # Skip to stage 5
-            'message': 'Eye appears normal. No disease classification needed.'
+            'message': f'Eye appears normal ({confidence_label}: {normal_confidence:.1%}). No disease classification needed.',
+            'normal_probability': normal_confidence,
+            'abnormal_probability': result['abnormal_probability'],
+            'method': result.get('method', 'unknown')
         }
     else:
         return {
@@ -547,7 +624,10 @@ def filter_normal_eyes(image_array: np.ndarray, model, normal_classifier):
             'result': 'abnormal',
             'confidence': result['abnormal_probability'],
             'skip_disease_classification': False,  # Proceed to stage 4
-            'message': 'Abnormalities detected. Proceeding with disease classification.'
+            'message': 'Abnormalities detected. Proceeding with disease classification.',
+            'normal_probability': result['normal_probability'],
+            'abnormal_probability': result['abnormal_probability'],
+            'method': result.get('method', 'unknown')
         }
 
 # ============================================
@@ -731,13 +811,28 @@ def run_enhanced_pipeline(image_path: str, enable_stages: dict = None):
         results['stages']['normal_filter'] = normal_result
         
         if normal_result.get('skip_disease_classification', False):
-            # Skip to validation
+            # Normal eye detected - directly assess confidence and skip disease classification
+            normal_confidence = normal_result.get('normal_probability', normal_result['confidence'])
+            confidence_level = normal_result.get('confidence_level', 'moderate')
+            confidence_label = normal_result.get('confidence_label', 'Moderate Confidence')
+            
             results['final_prediction'] = {
                 'disease': 'Normal',
-                'confidence': normal_result['confidence'],
-                'probabilities': {'Normal': normal_result['confidence']}
+                'confidence': normal_confidence,
+                'confidence_level': confidence_level,
+                'confidence_label': confidence_label,
+                'probabilities': {
+                    'Normal': normal_confidence,
+                    'Abnormal': normal_result.get('abnormal_probability', 1.0 - normal_confidence)
+                },
+                'method': normal_result.get('method', 'normal_abnormal_classifier')
             }
-            results['stages']['disease_classification'] = {'skipped': True, 'reason': 'normal_eye_detected'}
+            results['stages']['disease_classification'] = {
+                'skipped': True, 
+                'reason': 'normal_eye_detected',
+                'normal_confidence': normal_confidence,
+                'confidence_assessment': confidence_label
+            }
     else:
         normal_result = {'skip_disease_classification': False}
     

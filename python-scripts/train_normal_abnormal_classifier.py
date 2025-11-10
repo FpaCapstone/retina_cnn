@@ -25,6 +25,7 @@ ASSETS_MODEL_DIR = os.path.join(BASE_DIR, "../assets/images/models")
 
 IMG_SIZE = (224, 224)
 MODEL_NAME = "normal_abnormal_classifier.h5"
+TFLITE_MODEL_NAME = "normal_abnormal_classifier.tflite"
 
 # Disease categories
 DISEASES = ["Normal", "Uveitis", "Conjunctivitis", "Cataract", "Eyelid Drooping"]
@@ -148,20 +149,48 @@ def main():
     print(f"✅ Validation Accuracy: {val_accuracy:.4f}")
     print(f"✅ Validation Loss: {val_loss:.4f}")
     
-    # Save model
+    # Save H5 model to backend only (for server use)
     os.makedirs(MODEL_DIR, exist_ok=True)
     model_path = os.path.join(MODEL_DIR, MODEL_NAME)
     model.save(model_path)
-    print(f"✅ Saved model: {model_path}")
+    print(f"✅ Saved H5 model to backend: {model_path}")
     
-    # Also save to assets as fallback
-    os.makedirs(ASSETS_MODEL_DIR, exist_ok=True)
-    assets_path = os.path.join(ASSETS_MODEL_DIR, MODEL_NAME)
-    model.save(assets_path)
-    print(f"✅ Saved model to assets: {assets_path}")
+    # Convert to TFLite for mobile deployment
+    print("\n📱 Converting to TFLite format...")
+    try:
+        # Create TFLite converter
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        
+        # Convert to TFLite
+        tflite_model = converter.convert()
+        
+        # Save TFLite model to backend (for server fallback)
+        tflite_path = os.path.join(MODEL_DIR, TFLITE_MODEL_NAME)
+        with open(tflite_path, 'wb') as f:
+            f.write(tflite_model)
+        print(f"✅ Saved TFLite model to backend: {tflite_path}")
+        
+        # Save TFLite to assets for mobile app (small, mobile-friendly)
+        os.makedirs(ASSETS_MODEL_DIR, exist_ok=True)
+        tflite_assets_path = os.path.join(ASSETS_MODEL_DIR, TFLITE_MODEL_NAME)
+        with open(tflite_assets_path, 'wb') as f:
+            f.write(tflite_model)
+        print(f"✅ Saved TFLite model to assets: {tflite_assets_path}")
+        
+        # Get model size
+        tflite_size_mb = len(tflite_model) / (1024 * 1024)
+        h5_size_mb = os.path.getsize(model_path) / (1024 * 1024)
+        print(f"   H5 model size: {h5_size_mb:.2f} MB (backend only)")
+        print(f"   TFLite model size: {tflite_size_mb:.2f} MB (backend + assets)")
+        print(f"   ✅ TFLite is {h5_size_mb/tflite_size_mb:.1f}x smaller - perfect for mobile!")
+    except Exception as e:
+        print(f"⚠️  Could not convert to TFLite: {e}")
+        print("   H5 model will still be available in backend")
     
     print("\n🎉 Training complete! 6-layer CNN ready for Stage 3.")
     print("   Decision threshold: ≥0.85 confidence for 'Normal' classification")
+    print("   TFLite version available for mobile fallback")
 
 if __name__ == "__main__":
     main()
