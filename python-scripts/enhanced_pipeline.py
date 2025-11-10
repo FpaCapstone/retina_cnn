@@ -314,6 +314,51 @@ def reduce_glare(image: np.ndarray) -> np.ndarray:
     
     return enhanced
 
+def correct_alignment(image: np.ndarray) -> np.ndarray:
+    """
+    Apply affine transformation for alignment correction.
+    Detects eye region and corrects rotation/tilt.
+    """
+    if len(image.shape) == 3:
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    else:
+        gray = image.copy()
+    
+    # Detect edges to find eye region
+    edges = cv2.Canny(gray, 50, 150)
+    
+    # Find contours
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if len(contours) == 0:
+        return image  # No contours found, return original
+    
+    # Find largest contour (likely the eye)
+    largest_contour = max(contours, key=cv2.contourArea)
+    
+    # Get minimum area rectangle
+    rect = cv2.minAreaRect(largest_contour)
+    angle = rect[2]
+    
+    # Only correct if angle is significant (> 2 degrees)
+    if abs(angle) > 2 and abs(angle) < 88:
+        # Get rotation matrix
+        center = (image.shape[1] // 2, image.shape[0] // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        
+        # Apply affine transformation
+        if len(image.shape) == 3:
+            corrected = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]), 
+                                       flags=cv2.INTER_LINEAR, 
+                                       borderMode=cv2.BORDER_REPLICATE)
+        else:
+            corrected = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]), 
+                                      flags=cv2.INTER_LINEAR, 
+                                      borderMode=cv2.BORDER_REPLICATE)
+        return corrected
+    
+    return image  # No significant rotation, return original
+
 def preprocess_image(image_path: str, quality_report: dict):
     """
     Stage 2: Enhance image based on quality issues detected.
@@ -342,6 +387,10 @@ def preprocess_image(image_path: str, quality_report: dict):
     enhanced = enhance_contrast(enhanced)
     preprocessing_steps.append('contrast')
     
+    # Apply affine transformation for alignment correction
+    enhanced = correct_alignment(enhanced)
+    preprocessing_steps.append('alignment')
+    
     return enhanced, {
         'preprocessing_applied': preprocessing_steps,
         'original_shape': image_rgb.shape,
@@ -352,12 +401,104 @@ def preprocess_image(image_path: str, quality_report: dict):
 # STAGE 3: NORMAL-VS-ABNORMAL AI
 # ============================================
 
+def build_normal_vs_abnormal_classifier():
+    """
+    Build a 6-layer CNN for binary normal/abnormal classification.
+    Architecture: 6 layers with ReLU activation and Max Pooling as per documentation.
+    """
+    model = tf.keras.Sequential([
+        # Layer 1: Conv2D + ReLU + MaxPooling
+        tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(*IMG_SIZE, 3)),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        
+        # Layer 2: Conv2D + ReLU + MaxPooling
+        tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        
+        # Layer 3: Conv2D + ReLU + MaxPooling
+        tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        
+        # Layer 4: Flatten
+        tf.keras.layers.Flatten(),
+        
+        # Layer 5: Dense + ReLU
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dropout(0.5),
+        
+        # Layer 6: Output (binary: normal/abnormal)
+        tf.keras.layers.Dense(1, activation='sigmoid')
+    ])
+    
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+
+def load_normal_vs_abnormal_classifier():
+    """Load or create normal/abnormal classifier."""
+    normal_model_path = os.path.join(MODEL_DIR, "normal_abnormal_classifier.h5")
+    normal_assets_path = os.path.join(ASSETS_MODEL_DIR, "normal_abnormal_classifier.h5")
+    
+    if os.path.exists(normal_model_path):
+        try:
+            import sys
+            print("🔬 Loading 6-layer CNN normal/abnormal classifier...", file=sys.stderr)
+            return load_model(normal_model_path)
+        except Exception as e:
+            import sys
+            print(f"⚠️  Could not load normal/abnormal classifier: {e}", file=sys.stderr)
+            return None
+    elif os.path.exists(normal_assets_path):
+        try:
+            import sys
+            print("🔬 Loading 6-layer CNN normal/abnormal classifier from assets...", file=sys.stderr)
+            return load_model(normal_assets_path)
+        except Exception as e:
+            import sys
+            print(f"⚠️  Could not load normal/abnormal classifier: {e}", file=sys.stderr)
+            return None
+    
+    # If no trained model exists, fall back to using main model's Normal probability
+    return None
+
 def create_normal_vs_abnormal_classifier(model):
     """
-    Create a binary normal/abnormal classifier from the existing multi-class model.
-    Uses the model's 'Normal' class probability as the normal score.
+    Create a binary normal/abnormal classifier.
+    First tries to use dedicated 6-layer CNN, falls back to main model's Normal probability.
     """
-    def classify_normal_abnormal(image_array: np.ndarray) -> dict:
+    # Try to load dedicated 6-layer CNN
+    normal_classifier_model = load_normal_vs_abnormal_classifier()
+    
+    if normal_classifier_model is not None:
+        # Use dedicated 6-layer CNN
+        def classify_normal_abnormal_cnn(image_array: np.ndarray) -> dict:
+            img_resized = cv2.resize(image_array, IMG_SIZE)
+            img_normalized = img_resized.astype(np.float32) / 255.0
+            img_batched = np.expand_dims(img_normalized, axis=0)
+            
+            # Get binary prediction (0=abnormal, 1=normal)
+            prediction = normal_classifier_model.predict(img_batched, verbose=0)[0][0]
+            normal_prob = float(prediction)
+            abnormal_prob = 1.0 - normal_prob
+            
+            is_normal = normal_prob >= 0.85  # Threshold ≥0.85 as per documentation
+            
+            return {
+                'is_normal': is_normal,
+                'normal_probability': normal_prob,
+                'abnormal_probability': abnormal_prob,
+                'confidence': max(normal_prob, abnormal_prob),
+                'method': '6_layer_cnn'
+            }
+        
+        return classify_normal_abnormal_cnn
+    
+    # Fallback: Use main model's Normal class probability
+    def classify_normal_abnormal_fallback(image_array: np.ndarray) -> dict:
         # Preprocess for model
         img_resized = cv2.resize(image_array, IMG_SIZE)
         img_normalized = img_resized.astype(np.float32) / 255.0
@@ -371,16 +512,17 @@ def create_normal_vs_abnormal_classifier(model):
         normal_prob = float(predictions[0][normal_idx])
         abnormal_prob = 1.0 - normal_prob
         
-        is_normal = normal_prob > 0.7  # Threshold for "normal"
+        is_normal = normal_prob >= 0.85  # Threshold ≥0.85 as per documentation
         
         return {
             'is_normal': is_normal,
             'normal_probability': normal_prob,
             'abnormal_probability': abnormal_prob,
-            'confidence': max(normal_prob, abnormal_prob)
+            'confidence': max(normal_prob, abnormal_prob),
+            'method': 'main_model_fallback'
         }
     
-    return classify_normal_abnormal
+    return classify_normal_abnormal_fallback
 
 def filter_normal_eyes(image_array: np.ndarray, model, normal_classifier):
     """
@@ -469,9 +611,9 @@ def validate_confidence(prediction: dict, quality_report: dict):
     consistency_score = min(1.0, top2_diff * 2)  # Higher diff = more consistent
     final_confidence = quality_adjusted_confidence * consistency_score
     
-    # Determine if prediction is reliable
+    # Determine if prediction is reliable (threshold typically 0.75 as per documentation)
     is_reliable = (
-        final_confidence > 0.6 and
+        final_confidence >= 0.75 and
         quality_score > 0.5 and
         consistency_score > 0.5
     )
@@ -480,7 +622,7 @@ def validate_confidence(prediction: dict, quality_report: dict):
     
     if not is_reliable:
         reasons = []
-        if final_confidence <= 0.6:
+        if final_confidence < 0.75:
             reasons.append("low_confidence")
         if quality_score <= 0.5:
             reasons.append("poor_image_quality")
