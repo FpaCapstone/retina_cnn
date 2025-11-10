@@ -80,14 +80,20 @@ logs/
 .Trash/
 
 # ==========================
-# Large Model Files (Backend-only, not needed in repo)
+# Large Model Files (Not in Git - Stored on Render)
 # ==========================
-# Models are stored on Render backend, not in Git
-# These files exceed GitHub's 100MB limit
+# Model files exceed GitHub's 100MB limit and are stored on Render backend
+# Enhanced pipeline has fallback to main model if 6-layer CNN not available
+# 
+# Models are deployed to Render separately (not via Git)
+# See MODEL-FILES-STRATEGY.md for deployment instructions
+
+# Exclude all H5 model files
 *.h5
+
+# Exclude TFLite files (optional - can be kept if <100MB, but excluded for consistency)
 *.tflite
+
+# Exclude model directories
 backend/models/
 assets/images/models/
-# But keep small TFLite for mobile (if needed, use Git LFS)
-# Uncomment below if you need to track TFLite files with Git LFS
-# !assets/images/models/*.tflite
