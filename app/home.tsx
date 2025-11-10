@@ -147,8 +147,8 @@ export default function HomeScreen() {
               <Text style={styles.sectionDescription}>AI-powered detection across 5 classes from a single image</Text>
               
               <View style={styles.detectionCard}>
-                <View style={styles.detectionIconCircle}>
-                  <ScanEye size={48} color={Colors.text.primary} strokeWidth={2} />
+                <View style={[styles.detectionIconCircle, { backgroundColor: `${Colors.primary.purple}50`, borderColor: `${Colors.primary.purple}CC` }]}>
+                  <ScanEye size={48} color={Colors.primary.purple} strokeWidth={3} />
                 </View>
                 <Text style={styles.detectionCardTitle}>Scan Eye for Diseases</Text>
                 <Text style={styles.detectionCardDescription}>
@@ -211,8 +211,8 @@ export default function HomeScreen() {
               <Text style={styles.sectionDescription}>Upload patient images to improve AI accuracy</Text>
 
               <View style={styles.trainingCard}>
-                <View style={styles.trainingIconCircle}>
-                  <Database size={40} color={Colors.text.primary} strokeWidth={2} />
+                <View style={[styles.trainingIconCircle, { backgroundColor: `${Colors.primary.teal}50`, borderColor: `${Colors.primary.teal}CC` }]}>
+                  <Database size={40} color={Colors.primary.teal} strokeWidth={3} />
                 </View>
                 <Text style={styles.trainingCardTitle}>Upload Training Images</Text>
                 <Text style={styles.trainingCardDescription}>
@@ -526,12 +526,10 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   detectionCardTitle: {
     fontSize: 24,
@@ -630,12 +628,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 3,
   },
   trainingCardTitle: {
     fontSize: 22,
