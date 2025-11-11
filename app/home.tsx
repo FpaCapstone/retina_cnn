@@ -103,7 +103,7 @@ export default function HomeScreen() {
               onPress={() => setMode('detection')}
               activeOpacity={0.7}
             >
-              <Microscope size={20} color={Colors.text.primary} strokeWidth={2.5} />
+              <Microscope size={22} color={Colors.text.primary} strokeWidth={mode === 'detection' ? 3 : 2.5} opacity={mode === 'detection' ? 1 : 0.8} />
               <Text style={[
                 styles.modeTabText,
                 mode === 'detection' && styles.modeTabTextActive
@@ -118,7 +118,7 @@ export default function HomeScreen() {
               onPress={() => setMode('training')}
               activeOpacity={0.7}
             >
-              <Database size={20} color={Colors.text.primary} strokeWidth={2.5} />
+              <Database size={22} color={Colors.text.primary} strokeWidth={mode === 'training' ? 3 : 2.5} opacity={mode === 'training' ? 1 : 0.8} />
               <Text style={[
                 styles.modeTabText,
                 mode === 'training' && styles.modeTabTextActive
@@ -133,7 +133,7 @@ export default function HomeScreen() {
               onPress={handleInfoPress}
               activeOpacity={0.7}
             >
-              <AlertCircle size={20} color={Colors.text.primary} strokeWidth={2.5} />
+              <AlertCircle size={22} color={Colors.text.primary} strokeWidth={mode === 'info' ? 3 : 2.5} opacity={mode === 'info' ? 1 : 0.8} />
               <Text style={[
                 styles.modeTabText,
                 mode === 'info' && styles.modeTabTextActive
@@ -147,8 +147,8 @@ export default function HomeScreen() {
               <Text style={styles.sectionDescription}>AI-powered detection across 5 classes from a single image</Text>
               
               <View style={styles.detectionCard}>
-                <View style={[styles.detectionIconCircle, { backgroundColor: `${Colors.primary.purple}50`, borderColor: `${Colors.primary.purple}CC` }]}>
-                  <ScanEye size={48} color={Colors.primary.purple} strokeWidth={3} />
+                <View style={[styles.detectionIconCircle, { backgroundColor: `${Colors.primary.purple}80`, borderColor: Colors.primary.purple }]}>
+                  <ScanEye size={48} color="#FFFFFF" strokeWidth={4} />
                 </View>
                 <Text style={styles.detectionCardTitle}>Scan Eye for Diseases</Text>
                 <Text style={styles.detectionCardDescription}>
@@ -211,8 +211,8 @@ export default function HomeScreen() {
               <Text style={styles.sectionDescription}>Upload patient images to improve AI accuracy</Text>
 
               <View style={styles.trainingCard}>
-                <View style={[styles.trainingIconCircle, { backgroundColor: `${Colors.primary.teal}50`, borderColor: `${Colors.primary.teal}CC` }]}>
-                  <Database size={40} color={Colors.primary.teal} strokeWidth={3} />
+                <View style={[styles.trainingIconCircle, { backgroundColor: `${Colors.primary.teal}80`, borderColor: Colors.primary.teal }]}>
+                  <Database size={40} color="#FFFFFF" strokeWidth={4} />
                 </View>
                 <Text style={styles.trainingCardTitle}>Upload Training Images</Text>
                 <Text style={styles.trainingCardDescription}>
@@ -465,35 +465,45 @@ const styles = StyleSheet.create({
   },
   modeSelector: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 16,
-    padding: 4,
+    padding: 6,
     marginTop: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginBottom: 8,
+    borderWidth: 2.5,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   modeTab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderRadius: 12,
-    gap: 6,
+    gap: 8,
+    minHeight: 48,
   },
   modeTabActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
   modeTabText: {
-    fontSize: 13,
-    fontWeight: '600' as const,
+    fontSize: 14,
+    fontWeight: '700' as const,
     color: Colors.text.primary,
-    opacity: 0.7,
+    opacity: 0.9,
   },
   modeTabTextActive: {
     opacity: 1,
-    fontWeight: '700' as const,
+    fontWeight: '800' as const,
+    fontSize: 15,
   },
   cardsContainer: {
     marginTop: 24,
@@ -529,7 +539,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
-    borderWidth: 3,
+    borderWidth: 3.5,
+    borderColor: '#FFFFFF', // Default, will be overridden by inline style
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 6,
   },
   detectionCardTitle: {
     fontSize: 24,
@@ -631,7 +647,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    borderWidth: 3,
+    borderWidth: 3.5,
+    borderColor: '#FFFFFF', // Default, will be overridden by inline style
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+    elevation: 6,
   },
   trainingCardTitle: {
     fontSize: 22,

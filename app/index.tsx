@@ -160,8 +160,8 @@ export default function DashboardScreen() {
                     },
                   ]}
                 >
-                  <View style={[styles.stageIconContainer, { backgroundColor: `${stage.color}50`, borderColor: `${stage.color}CC` }]}>
-                    <stage.icon size={24} color={stage.color} strokeWidth={3} />
+                  <View style={[styles.stageIconContainer, { backgroundColor: `${stage.color}80`, borderColor: stage.color }]}>
+                    <stage.icon size={24} color="#FFFFFF" strokeWidth={4} />
                   </View>
                   <View style={styles.stageContent}>
                     <View style={styles.stageHeader}>
@@ -184,8 +184,8 @@ export default function DashboardScreen() {
               onPress={handleGoToDetection}
               activeOpacity={0.8}
             >
-              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.purple}50`, borderColor: `${Colors.primary.purple}CC` }]}>
-                <ScanEye size={32} color={Colors.primary.purple} strokeWidth={3} />
+              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.purple}80`, borderColor: Colors.primary.purple }]}>
+                <ScanEye size={32} color="#FFFFFF" strokeWidth={4} />
               </View>
               <View style={styles.navContent}>
                 <Text style={styles.navTitle}>Detect Eye Diseases</Text>
@@ -201,8 +201,8 @@ export default function DashboardScreen() {
               onPress={handleGoToTraining}
               activeOpacity={0.8}
             >
-              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.teal}50`, borderColor: `${Colors.primary.teal}CC` }]}>
-                <Database size={32} color={Colors.primary.teal} strokeWidth={3} />
+              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.teal}80`, borderColor: Colors.primary.teal }]}>
+                <Database size={32} color="#FFFFFF" strokeWidth={4} />
               </View>
               <View style={styles.navContent}>
                 <Text style={styles.navTitle}>Training Data</Text>
@@ -218,8 +218,8 @@ export default function DashboardScreen() {
               onPress={handleGoToHome}
               activeOpacity={0.8}
             >
-              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.green}50`, borderColor: `${Colors.primary.green}CC` }]}>
-                <AlertCircle size={32} color={Colors.primary.green} strokeWidth={3} />
+              <View style={[styles.navIconCircle, { backgroundColor: `${Colors.primary.green}80`, borderColor: Colors.primary.green }]}>
+                <AlertCircle size={32} color="#FFFFFF" strokeWidth={4} />
               </View>
               <View style={styles.navContent}>
                 <Text style={styles.navTitle}>Model Information</Text>
@@ -337,7 +337,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
-    borderWidth: 2.5,
+    borderWidth: 3,
+    borderColor: '#FFFFFF', // Default, will be overridden by inline style
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   stageContent: {
     flex: 1,
@@ -391,7 +397,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
-    borderWidth: 2.5,
+    borderWidth: 3,
+    borderColor: '#FFFFFF', // Default, will be overridden by inline style
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   navContent: {
     flex: 1,

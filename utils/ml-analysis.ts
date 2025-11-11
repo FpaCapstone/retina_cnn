@@ -9,29 +9,14 @@ const TRAINING_IMAGES_KEY = 'training_images';
 
 /**
  * Check if backend is available by testing the connection
+ * Tries local backend first, then Render backend
  */
 async function checkBackendAvailable(): Promise<boolean> {
   try {
-    // Try to fetch the backend health endpoint or make a simple test call
-    const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-    
-    // For Render backend, try the root endpoint
-    if (baseUrl.includes('onrender.com') || baseUrl.includes('render.com')) {
-      try {
-        const response = await fetch(`${baseUrl}/`, {
-          method: 'GET',
-          signal: AbortSignal.timeout(3000), // 3 second timeout
-        });
-        return response.ok;
-      } catch (error) {
-        console.log('[ML Analysis] Backend health check failed:', error);
-        return false;
-      }
-    }
-    
-    // For local development, assume available if not explicitly set
-    // The actual API call will fail gracefully if backend is down
-    return true;
+    // Use backend config to find available backend
+    const { findAvailableBackend } = await import('@/utils/backend-config');
+    const availableUrl = await findAvailableBackend();
+    return availableUrl !== null;
   } catch (error) {
     console.log('[ML Analysis] Backend availability check error:', error);
     return false;
@@ -122,6 +107,7 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
   console.log('[ML Analysis] Starting analysis. Image URI:', imageUri);
 
   // PRIORITY 1: Try enhanced backend pipeline first (best accuracy)
+  // This already uses TRPC client which has backend fallback configured
   try {
     console.log('[ML Analysis] 🚀 Attempting enhanced backend pipeline (5-stage)...');
     const enhancedResult = await analyzeEyeImageEnhanced(imageUri, {
@@ -141,11 +127,13 @@ export async function analyzeEyeImage(imageUri: string): Promise<AnalysisResult>
   }
 
   // PRIORITY 2: Try standard backend analysis
+  // TRPC client will use primary backend (local if configured, otherwise Render)
+  // If it fails, the error will be caught and we'll fall back to TFLite
   try {
     console.log('[ML Analysis] 🔄 Attempting standard backend analysis...');
     const backendResult = await Promise.race([
       trpcClient.detection.analyze.mutate({ imageUri }),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Backend timeout')), 8000)
       ),
     ]) as any;

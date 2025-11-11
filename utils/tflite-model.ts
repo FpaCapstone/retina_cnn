@@ -104,7 +104,7 @@ async function preprocessImageForTF(imageUri: string): Promise<tf.Tensor3D> {
     } else {
       // Read from file system
       base64 = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64' as const,
       });
       
       // Detect format from file extension

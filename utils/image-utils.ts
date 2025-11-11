@@ -14,7 +14,7 @@ export async function convertImageToBase64(imageUri: string): Promise<string> {
     // If it's a file URI, read and convert
     if (imageUri.startsWith('file://') || imageUri.startsWith('/')) {
       const base64 = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: 'base64' as const,
       });
       
       // Determine MIME type from file extension

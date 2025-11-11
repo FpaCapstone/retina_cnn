@@ -10,6 +10,7 @@ export default {
     dark: '#0F172A',
     card: '#1E293B',
     cardLight: '#334155',
+    secondary: 'rgba(255, 255, 255, 0.1)',
   },
   text: {
     primary: '#FFFFFF',
@@ -28,5 +29,9 @@ export default {
     conjunctivitis: '#F59E0B',
     cataract: '#14B8A6',
     eyelid_drooping: '#3B82F6',
-  }
+  },
+  border: {
+    primary: 'rgba(255, 255, 255, 0.2)',
+    secondary: 'rgba(255, 255, 255, 0.1)',
+  },
 };
